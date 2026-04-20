@@ -1,0 +1,14 @@
+{
+  "name": "MantHYC — Gestión de Mantenimiento",
+  "short_name": "MantHYC",
+  "description": "Plataforma de gestión de contratos de mantenimiento de edificaciones — HYC Proyectos de Ingeniería SAS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1A1A2E",
+  "theme_color": "#CC0607",
+  "orientation": "portrait-primary",
+  "lang": "es-CO",
+  "icons": [
+    { "src": "/manthyc-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

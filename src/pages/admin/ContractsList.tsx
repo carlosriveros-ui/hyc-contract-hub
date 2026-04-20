@@ -1,0 +1,210 @@
+import { AppShell } from "@/components/AppShell";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { contracts, getUser } from "@/data/mock";
+import { formatCOP, formatDate, timeProgress } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Plus, Search, ArrowRight } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+
+export default function ContractsList() {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filtered = contracts.filter((c) =>
+    c.clientName.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <AppShell title="Contratos & Sedes" subtitle="Gestión integral de contratos de mantenimiento"
+      actions={
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button variant="brand" size="sm" className="gap-1.5">
+              <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nuevo Contrato</span>
+            </Button>
+          </DialogTrigger>
+          <NewContractDialog onClose={() => setOpen(false)} />
+        </Dialog>
+      }
+    >
+      <div className="bg-surface rounded-lg border border-border shadow-card overflow-hidden">
+        <div className="p-4 flex flex-col sm:flex-row gap-3 sm:items-center justify-between border-b border-border">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar contrato o cliente..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Select defaultValue="todos">
+              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="activo">Activos</SelectItem>
+                <SelectItem value="vencido">Vencidos</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select defaultValue="2026">
+              <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2026">2026</SelectItem>
+                <SelectItem value="2025">2025</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40">
+              <tr className="text-left text-xs uppercase text-muted-foreground">
+                <th className="px-4 py-3 font-semibold">Cliente</th>
+                <th className="px-4 py-3 font-semibold">Sedes</th>
+                <th className="px-4 py-3 font-semibold">Valor total</th>
+                <th className="px-4 py-3 font-semibold">Inicio</th>
+                <th className="px-4 py-3 font-semibold">Fin</th>
+                <th className="px-4 py-3 font-semibold">% Tiempo</th>
+                <th className="px-4 py-3 font-semibold">Estado</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((c) => {
+                const progress = timeProgress(c.startDate, c.endDate);
+                return (
+                  <tr key={c.id} className="border-t border-border hover:bg-muted/30 cursor-pointer"
+                      onClick={() => navigate(`/contratos/${c.id}`)}>
+                    <td className="px-4 py-3.5">
+                      <p className="font-semibold text-foreground">{c.clientName}</p>
+                      <p className="text-xs text-muted-foreground">NIT {c.nit}</p>
+                    </td>
+                    <td className="px-4 py-3.5 tabular-nums">{c.sitesCount}</td>
+                    <td className="px-4 py-3.5 font-semibold tabular-nums">{formatCOP(c.totalValue)}</td>
+                    <td className="px-4 py-3.5 text-muted-foreground">{formatDate(c.startDate)}</td>
+                    <td className="px-4 py-3.5 text-muted-foreground">{formatDate(c.endDate)}</td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-warning" style={{ width: `${progress}%` }} />
+                        </div>
+                        <span className="text-xs font-semibold tabular-nums">{progress}%</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <Badge className="bg-success/15 text-success border-success/30 hover:bg-success/15">Activo</Badge>
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      <ArrowRight className="w-4 h-4 text-muted-foreground inline" />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile cards */}
+        <div className="lg:hidden divide-y divide-border">
+          {filtered.map((c) => {
+            const progress = timeProgress(c.startDate, c.endDate);
+            return (
+              <button key={c.id} onClick={() => navigate(`/contratos/${c.id}`)}
+                className="w-full text-left p-4 hover:bg-muted/30">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="font-semibold">{c.clientName}</p>
+                  <Badge className="bg-success/15 text-success border-success/30">Activo</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">{c.sitesCount} sedes · {formatCOP(c.totalValue)}</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-warning" style={{ width: `${progress}%` }} />
+                  </div>
+                  <span className="text-xs font-semibold tabular-nums">{progress}%</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+function NewContractDialog({ onClose }: { onClose: () => void }) {
+  return (
+    <DialogContent className="max-w-lg">
+      <DialogHeader>
+        <DialogTitle>Nuevo Contrato</DialogTitle>
+        <DialogDescription>Registra un nuevo contrato de mantenimiento.</DialogDescription>
+      </DialogHeader>
+      <form
+        onSubmit={(e) => { e.preventDefault(); toast.success("Contrato creado (demo)"); onClose(); }}
+        className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+      >
+        <div className="sm:col-span-2 space-y-1.5">
+          <Label>Nombre del cliente</Label>
+          <Input placeholder="Ej: Conjunto Residencial Bella Vista" required />
+        </div>
+        <div className="space-y-1.5">
+          <Label>NIT</Label>
+          <Input placeholder="900.000.000-0" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Contacto</Label>
+          <Input placeholder="Nombre y teléfono" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Valor total (COP)</Label>
+          <Input type="number" placeholder="1480000000" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Presupuesto mensual (COP)</Label>
+          <Input type="number" placeholder="55000000" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Fecha de inicio</Label>
+          <Input type="date" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Fecha de fin</Label>
+          <Input type="date" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Coordinador</Label>
+          <Select defaultValue="u2">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="u2">Andrea Méndez</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Estado</Label>
+          <Select defaultValue="activo">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="activo">Activo</SelectItem>
+              <SelectItem value="negociacion">En negociación</SelectItem>
+              <SelectItem value="vencido">Vencido</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <DialogFooter className="sm:col-span-2">
+          <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" variant="brand">Guardar contrato</Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  );
+}
