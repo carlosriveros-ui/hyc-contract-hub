@@ -7,26 +7,43 @@ import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Camera, CheckCircle2, AlertCircle } from "lucide-react";
+import { Plus, Search, Camera, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import type { Activity } from "@/types";
 import { toast } from "sonner";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function ActivitiesCoordinator() {
   const [selected, setSelected] = useState<Activity | null>(null);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [filterStatus, setFilterStatus] = useState("todos");
+  const [filterTech, setFilterTech] = useState("todos");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [actList, setActList] = useState<Activity[]>(activities);
+  const [actionLoading, setActionLoading] = useState<"recibida" | "correccion" | null>(null);
 
-  const filtered = activities.filter((a) =>
-    a.description.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = actList.filter((a) => {
+    const matchesSearch = a.description.toLowerCase().includes(debouncedSearch.toLowerCase());
+    const matchesStatus = filterStatus === "todos" || a.status === filterStatus;
+    const matchesTech = filterTech === "todos" || a.technicianId === filterTech;
+    return matchesSearch && matchesStatus && matchesTech;
+  });
 
   return (
     <AppShell title="Actividades" subtitle="Programación y seguimiento de mantenimiento"
       actions={
-        <Button variant="brand" size="sm" className="gap-1.5">
-          <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nueva Actividad</span>
-        </Button>
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogTrigger asChild>
+            <Button variant="brand" size="sm" className="gap-1.5">
+              <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nueva Actividad</span>
+            </Button>
+          </DialogTrigger>
+          <NewActivityDialog onClose={() => setIsCreateOpen(false)} onAdd={(a) => setActList([a, ...actList])} />
+        </Dialog>
       }
     >
       <div className="bg-surface rounded-lg border border-border shadow-card overflow-hidden">
@@ -35,7 +52,7 @@ export default function ActivitiesCoordinator() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Buscar actividad..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
-          <Select defaultValue="todos">
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger><SelectValue placeholder="Estado" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos los estados</SelectItem>
@@ -45,7 +62,7 @@ export default function ActivitiesCoordinator() {
               <SelectItem value="recibida">Recibidas</SelectItem>
             </SelectContent>
           </Select>
-          <Select defaultValue="todos">
+          <Select value={filterTech} onValueChange={setFilterTech}>
             <SelectTrigger><SelectValue placeholder="Técnico" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos</SelectItem>
@@ -83,7 +100,15 @@ export default function ActivitiesCoordinator() {
                 const tech = a.technicianId ? getUser(a.technicianId) : undefined;
                 return (
                   <tr key={a.id} className="border-t border-border hover:bg-muted/30 cursor-pointer"
-                      onClick={() => setSelected(a)}>
+                      onClick={() => setSelected(a)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelected(a);
+                        }
+                      }}>
                     <td className="px-4 py-3">{site?.name}</td>
                     <td className="px-4 py-3 font-medium">{a.description}</td>
                     <td className="px-4 py-3"><Badge variant="outline">{a.type}</Badge></td>
@@ -120,6 +145,11 @@ export default function ActivitiesCoordinator() {
               </button>
             );
           })}
+        </div>
+        <div className="p-4 border-t border-border flex justify-center">
+          <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => toast.info("Función de paginación simulada")}>
+            Cargar más resultados
+          </Button>
         </div>
       </div>
 
@@ -187,11 +217,27 @@ export default function ActivitiesCoordinator() {
                 </section>
 
                 <div className="flex gap-2 pt-2">
-                  <Button variant="success" className="flex-1 gap-1.5" onClick={() => { toast.success("Actividad recibida"); setSelected(null); }}>
-                    <CheckCircle2 className="w-4 h-4" /> Marcar Recibida
+                  <Button variant="success" className="flex-1 gap-1.5" disabled={!!actionLoading} onClick={() => {
+                    setActionLoading("recibida");
+                    setTimeout(() => {
+                      toast.success("Actividad recibida");
+                      setSelected(null);
+                      setActionLoading(null);
+                    }, 800);
+                  }}>
+                    {actionLoading === "recibida" ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                    {actionLoading === "recibida" ? "Procesando..." : "Marcar Recibida"}
                   </Button>
-                  <Button variant="outline" className="gap-1.5" onClick={() => { toast.warning("Solicitud enviada"); setSelected(null); }}>
-                    <AlertCircle className="w-4 h-4" /> Corrección
+                  <Button variant="outline" className="gap-1.5" disabled={!!actionLoading} onClick={() => {
+                    setActionLoading("correccion");
+                    setTimeout(() => {
+                      toast.warning("Solicitud enviada");
+                      setSelected(null);
+                      setActionLoading(null);
+                    }, 800);
+                  }}>
+                    {actionLoading === "correccion" ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertCircle className="w-4 h-4" />}
+                    {actionLoading === "correccion" ? "Enviando..." : "Corrección"}
                   </Button>
                 </div>
               </div>
@@ -200,5 +246,70 @@ export default function ActivitiesCoordinator() {
         </SheetContent>
       </Sheet>
     </AppShell>
+  );
+}
+
+function NewActivityDialog({ onClose, onAdd }: { onClose: () => void, onAdd: (a: Activity) => void }) {
+  return (
+    <DialogContent className="max-w-md">
+      <DialogHeader>
+        <DialogTitle>Nueva Actividad</DialogTitle>
+      </DialogHeader>
+      <form
+        onSubmit={(e) => { 
+          e.preventDefault(); 
+          const fd = new FormData(e.currentTarget);
+          const newAct: Activity = {
+            id: `a${Date.now()}`,
+            contractId: "c1",
+            siteId: fd.get("siteId") as string || "s1",
+            description: fd.get("desc") as string,
+            type: fd.get("type") as string || "General",
+            technicianId: fd.get("techId") as string || "u3",
+            scheduledDate: new Date().toISOString().slice(0, 10),
+            status: "programada"
+          };
+          onAdd(newAct);
+          toast.success("Actividad creada (prototipo)"); 
+          onClose(); 
+        }}
+        className="grid gap-4"
+      >
+        <div className="space-y-1.5">
+          <Label>Descripción</Label>
+          <Input name="desc" placeholder="Ej: Cambio de luminaria" required />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Sede / Unidad</Label>
+          <Select name="siteId" defaultValue="s1">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="s1">Torre A — Apto 101</SelectItem>
+              <SelectItem value="s2">Torre A — Apto 201</SelectItem>
+              <SelectItem value="s22">Zonas Comunes — Lobby</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Tipo de trabajo</Label>
+          <Input name="type" placeholder="Pintura, Eléctrico, etc." defaultValue="Mantenimiento" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Técnico asignado</Label>
+          <Select name="techId" defaultValue="u3">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="u3">Alexander Espinosa</SelectItem>
+              <SelectItem value="u4">Miguel Tejedor</SelectItem>
+              <SelectItem value="u5">Harold Castro</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" variant="brand">Guardar actividad</Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
   );
 }

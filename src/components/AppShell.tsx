@@ -5,6 +5,8 @@ import { Menu, Bell } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar } from "@/components/Avatar";
 import { BrandLogo } from "@/components/BrandLogo";
+import { BottomNav } from "@/components/BottomNav";
+import { cn } from "@/lib/utils";
 
 export function AppShell({ children, title, subtitle, actions }: {
   children: ReactNode;
@@ -14,29 +16,35 @@ export function AppShell({ children, title, subtitle, actions }: {
 }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  
+  const isMobileRole = user?.role === "tecnico" || user?.role === "conductor";
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       {/* Desktop sidebar */}
-      <div className="hidden lg:block">
-        <AppSidebar />
-      </div>
+      {!isMobileRole && (
+        <div className="hidden lg:block">
+          <AppSidebar />
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
         <header className="h-14 lg:h-16 border-b border-border bg-surface flex items-center justify-between px-4 lg:px-6 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             {/* Mobile menu */}
-            <Sheet open={open} onOpenChange={setOpen}>
-              <SheetTrigger asChild>
-                <button className="lg:hidden p-2 -ml-2 rounded-md hover:bg-accent" aria-label="Abrir menú">
-                  <Menu className="w-5 h-5" />
-                </button>
-              </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-60 bg-sidebar border-sidebar-border">
-                <AppSidebar onNavigate={() => setOpen(false)} />
-              </SheetContent>
-            </Sheet>
+            {!isMobileRole && (
+              <Sheet open={open} onOpenChange={setOpen}>
+                <SheetTrigger asChild>
+                  <button className="lg:hidden p-2 -ml-2 rounded-md hover:bg-accent" aria-label="Abrir menú">
+                    <Menu className="w-5 h-5" />
+                  </button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-60 bg-sidebar border-sidebar-border">
+                  <AppSidebar onNavigate={() => setOpen(false)} />
+                </SheetContent>
+              </Sheet>
+            )}
             <div className="lg:hidden">
               <BrandLogo variant="dark" size="sm" />
             </div>
@@ -67,11 +75,14 @@ export function AppShell({ children, title, subtitle, actions }: {
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto">
+        <main className={cn("flex-1 overflow-y-auto", isMobileRole && "pb-16")}>
           <div className="p-4 lg:p-6 max-w-[1600px] mx-auto w-full">
             {children}
           </div>
         </main>
+        
+        {/* Bottom Nav for mobile roles */}
+        <BottomNav />
       </div>
     </div>
   );

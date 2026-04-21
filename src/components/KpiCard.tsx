@@ -23,7 +23,7 @@ const accentClasses: Record<NonNullable<KpiCardProps["accent"]>, string> = {
 export function KpiCard({ label, value, icon: Icon, accent = "secondary", trailing, className }: KpiCardProps) {
   return (
     <div className={cn(
-      "bg-surface rounded-lg border border-border p-5 shadow-card flex items-start justify-between gap-4 animate-fade-in",
+      "bg-surface rounded-lg border border-border p-5 shadow-card flex items-start justify-between gap-4 animate-fade-in hover:-translate-y-1 hover:shadow-md transition-all duration-300",
       className,
     )}>
       <div className="min-w-0">

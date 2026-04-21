@@ -28,15 +28,15 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/contratos" element={<RequireAuth><ContractsList /></RequireAuth>} />
-            <Route path="/contratos/:id" element={<RequireAuth><ContractDetail /></RequireAuth>} />
-            <Route path="/actividades" element={<RequireAuth><ActivitiesCoordinator /></RequireAuth>} />
-            <Route path="/materiales" element={<RequireAuth><MaterialsWarehouse /></RequireAuth>} />
-            <Route path="/contratistas" element={<RequireAuth><Contractors /></RequireAuth>} />
-            <Route path="/costos" element={<RequireAuth><CostsControl /></RequireAuth>} />
-            <Route path="/asistencia" element={<RequireAuth><Attendance /></RequireAuth>} />
-            <Route path="/caja-menor" element={<RequireAuth><PettyCash /></RequireAuth>} />
-            <Route path="/reportes" element={<RequireAuth><ComingSoon title="Reportes" /></RequireAuth>} />
+            <Route path="/contratos" element={<RequireAuth roles={["admin", "coordinador"]}><ContractsList /></RequireAuth>} />
+            <Route path="/contratos/:id" element={<RequireAuth roles={["admin", "coordinador"]}><ContractDetail /></RequireAuth>} />
+            <Route path="/actividades" element={<RequireAuth roles={["admin", "coordinador", "cliente"]}><ActivitiesCoordinator /></RequireAuth>} />
+            <Route path="/materiales" element={<RequireAuth roles={["admin", "coordinador", "conductor"]}><MaterialsWarehouse /></RequireAuth>} />
+            <Route path="/contratistas" element={<RequireAuth roles={["admin", "coordinador"]}><Contractors /></RequireAuth>} />
+            <Route path="/costos" element={<RequireAuth roles={["admin", "coordinador"]}><CostsControl /></RequireAuth>} />
+            <Route path="/asistencia" element={<RequireAuth roles={["admin", "coordinador"]}><Attendance /></RequireAuth>} />
+            <Route path="/caja-menor" element={<RequireAuth roles={["admin", "coordinador", "tecnico"]}><PettyCash /></RequireAuth>} />
+            <Route path="/reportes" element={<RequireAuth roles={["admin"]}><ComingSoon title="Reportes" /></RequireAuth>} />
             <Route path="/configuracion" element={<RequireAuth><ComingSoon title="Configuración" /></RequireAuth>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

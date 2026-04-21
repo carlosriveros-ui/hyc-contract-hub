@@ -1,0 +1,104 @@
+# Plan de Desarrollo MantHYC
+
+El objetivo de este plan es llevar la plataforma MantHYC desde su estado actual (un prototipo frontend construido con React, Vite y Tailwind, usando datos "mockeados") hasta un producto completamente funcional integrado con Supabase, tal como se especifica en el Documento Maestro.
+
+> [!NOTE]
+> El estado actual del proyecto cubre la **Etapa 1** y parte visual de las **Etapas 3 y 4** del roadmap (interfaces creadas pero sin backend real).
+
+## User Review Required
+
+Antes de comenzar a modificar el código, necesitamos definir algunos puntos sobre el entorno de desarrollo:
+
+> [!IMPORTANT]
+> 1. **Proyecto de Supabase:** ¿Ya creaste el proyecto en Supabase (supabase.com)? Necesitaremos la URL y la Key anónima para conectarlo con la aplicación.
+> 2. **Instalación de dependencias:** El intento anterior de instalar dependencias (npm install) fue denegado. ¿Deseas que primero instalemos todas las dependencias actuales junto con la librería de Supabase (`npm i @supabase/supabase-js`)?
+
+## Propuesta de Fases de Desarrollo
+
+A continuación, detallo cómo ejecutaremos las etapas restantes del Roadmap de forma ordenada.
+
+---
+
+### Fase 1: Configuración de Base de Datos y Autenticación (Semanas 1)
+
+Actualmente, el inicio de sesión y los datos provienen de `src/data/mock.ts`. El primer paso es conectar el cerebro de la aplicación.
+
+#### [NEW] Base de Datos (Supabase)
+- Tomaremos el esquema SQL provisto en el Documento Maestro (Punto 7) y lo ejecutaremos en Supabase para crear las tablas: `contratos`, `sedes`, `usuarios`, `actividades`, `materiales`, etc.
+- Configuraremos Row Level Security (RLS) para proteger los datos.
+
+#### [NEW] Cliente de Supabase
+- Creación de `src/lib/supabase.ts` para inicializar la conexión con las variables de entorno `.env.local`.
+
+#### [MODIFY] `src/context/AuthContext.tsx`
+- Reemplazar la autenticación simulada por **Supabase Auth**.
+- Sincronizar el estado del usuario logueado y su `rol` con la tabla `usuarios` en la base de datos.
+
+---
+
+### Fase 2: Módulo de Contratos y Sedes (Semanas 1-2)
+
+Conectaremos las pantallas existentes a la base de datos real.
+
+#### [MODIFY] `src/pages/admin/ContractsList.tsx`
+- Eliminar el uso de `contracts` desde el mock.
+- Implementar consultas a Supabase usando `@tanstack/react-query` para listar los contratos activos e inactivos.
+- Activar el formulario de "Nuevo Contrato" para que inserte registros reales en la tabla `contratos`.
+
+#### [MODIFY] `src/pages/admin/ContractDetail.tsx`
+- Mostrar detalles reales del contrato, cálculo de avance dinámico y listado de `sedes` asociadas.
+
+---
+
+### Fase 3: Módulo de Actividades y Asistencia (Semanas 2-3)
+
+Este es el núcleo operativo para el técnico en campo.
+
+#### [NEW] Gestión de Actividades
+- Crear o modificar la interfaz de Actividades (`/actividades`) para listar tareas asignadas por sede.
+- **Supabase Storage:** Configurar un bucket para subir las fotos de evidencia.
+- Permitir que el técnico cambie el estado de la actividad (Completada, Pendiente) y suba su foto obligatoria.
+
+#### [NEW] Asistencia con Geolocalización
+- En la interfaz del Técnico, agregar los botones prominentes de **Llegada / Salida**.
+- Capturar las coordenadas usando la API nativa de geolocalización del navegador.
+- Guardar estos registros en la tabla `asistencia` en Supabase.
+
+---
+
+### Fase 4: Dashboard y Módulo de Bodega (Semanas 3-6)
+
+#### [MODIFY] `src/pages/admin/DashboardAdmin.tsx`
+- Construir los indicadores del gerente (Carlos): tarjetas resumen, costos del mes y alertas dinámicas (ej. actividades vencidas o materiales sin devolución).
+
+#### [NEW] Módulo de Materiales & Bodega
+- Desarrollar la vista de inventario (`/materiales`).
+- Crear el flujo de trazabilidad completo alimentando la tabla `movimientos_materiales` (entrada, despacho, entrega, devolución).
+- **Fotos de entrega:** Permitir adjuntar soportes/firmas a los movimientos.
+
+---
+
+### Fase 5: Contratistas, Costos y Caja Menor (Semanas 6-11)
+
+#### [NEW] Módulo de Contratistas Especiales (`/contratistas`)
+- Gestión del ciclo de vida del contratista, anticipos, control de avance por unidad y checklist.
+
+#### [NEW] Control de Costos (`/costos`)
+- Módulo para reemplazar el Excel de control financiero. Registro de gastos por categoría, con semáforos de presupuesto vs. real.
+
+#### [NEW] Caja Menor (`/caja-menor`)
+- Registro de gastos menores (minucia) con subida de fotos del recibo y flujo de aprobación por el coordinador.
+
+---
+
+## Plan de Verificación
+
+Durante cada fase aplicaremos las siguientes validaciones:
+
+### Verificación Técnica
+1. Asegurarnos que `npm run build` pase sin errores de TypeScript tras cada modificación a los mocks.
+2. Confirmar que los permisos RLS en Supabase evitan que un Técnico vea datos de otro contrato al que no está asignado.
+
+### Verificación Manual (Pruebas de Usuario)
+1. Probaremos el flujo de la aplicación con diferentes roles (Admin, Coordinador, Técnico) usando datos reales en Supabase.
+2. Validaremos el correcto funcionamiento de la cámara y el GPS en dispositivos móviles para el rol de Técnico.

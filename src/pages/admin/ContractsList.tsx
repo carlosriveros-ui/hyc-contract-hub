@@ -6,19 +6,24 @@ import { formatCOP, formatDate, timeProgress } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, ArrowRight } from "lucide-react";
+import { Plus, Search, ArrowRight, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 export default function ContractsList() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
 
   const filtered = contracts.filter((c) =>
-    c.clientName.toLowerCase().includes(search.toLowerCase())
+    c.clientName.toLowerCase().includes(debouncedSearch.toLowerCase())
   );
 
   return (
@@ -84,7 +89,15 @@ export default function ContractsList() {
                 const progress = timeProgress(c.startDate, c.endDate);
                 return (
                   <tr key={c.id} className="border-t border-border hover:bg-muted/30 cursor-pointer"
-                      onClick={() => navigate(`/contratos/${c.id}`)}>
+                      onClick={() => navigate(`/contratos/${c.id}`)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          navigate(`/contratos/${c.id}`);
+                        }
+                      }}>
                     <td className="px-4 py-3.5">
                       <p className="font-semibold text-foreground">{c.clientName}</p>
                       <p className="text-xs text-muted-foreground">NIT {c.nit}</p>
@@ -136,12 +149,47 @@ export default function ContractsList() {
             );
           })}
         </div>
+        <div className="p-4 border-t border-border flex justify-center">
+          <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => toast.info("Función de paginación simulada")}>
+            Cargar más resultados
+          </Button>
+        </div>
       </div>
     </AppShell>
   );
 }
 
+const contractSchema = z.object({
+  clientName: z.string().min(1, "El nombre es obligatorio"),
+  nit: z.string().min(1, "El NIT es obligatorio"),
+  contact: z.string().optional(),
+  totalValue: z.coerce.number().min(1, "El valor debe ser mayor a 0"),
+  monthlyBudget: z.coerce.number().min(1, "El presupuesto debe ser mayor a 0"),
+  startDate: z.string().min(1, "Requerido"),
+  endDate: z.string().min(1, "Requerido"),
+  coordinatorId: z.string().min(1, "Requerido"),
+  status: z.string().min(1, "Requerido"),
+});
+
 function NewContractDialog({ onClose }: { onClose: () => void }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<z.infer<typeof contractSchema>>({
+    resolver: zodResolver(contractSchema),
+    defaultValues: {
+      coordinatorId: "u2",
+      status: "activo"
+    }
+  });
+
+  const onSubmit = (data: z.infer<typeof contractSchema>) => {
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      toast.success("Contrato creado (demo)");
+      onClose();
+    }, 1000);
+  };
+
   return (
     <DialogContent className="max-w-lg">
       <DialogHeader>
@@ -149,40 +197,46 @@ function NewContractDialog({ onClose }: { onClose: () => void }) {
         <DialogDescription>Registra un nuevo contrato de mantenimiento.</DialogDescription>
       </DialogHeader>
       <form
-        onSubmit={(e) => { e.preventDefault(); toast.success("Contrato creado (demo)"); onClose(); }}
+        onSubmit={handleSubmit(onSubmit)}
         className="grid grid-cols-1 sm:grid-cols-2 gap-4"
       >
         <div className="sm:col-span-2 space-y-1.5">
           <Label>Nombre del cliente</Label>
-          <Input placeholder="Ej: Conjunto Residencial Bella Vista" required />
+          <Input placeholder="Ej: Conjunto Residencial Bella Vista" {...register("clientName")} />
+          {errors.clientName && <p className="text-xs text-destructive">{errors.clientName.message}</p>}
         </div>
         <div className="space-y-1.5">
           <Label>NIT</Label>
-          <Input placeholder="900.000.000-0" />
+          <Input placeholder="900.000.000-0" {...register("nit")} />
+          {errors.nit && <p className="text-xs text-destructive">{errors.nit.message}</p>}
         </div>
         <div className="space-y-1.5">
           <Label>Contacto</Label>
-          <Input placeholder="Nombre y teléfono" />
+          <Input placeholder="Nombre y teléfono" {...register("contact")} />
         </div>
         <div className="space-y-1.5">
           <Label>Valor total (COP)</Label>
-          <Input type="number" placeholder="1480000000" />
+          <Input type="number" placeholder="1480000000" {...register("totalValue")} />
+          {errors.totalValue && <p className="text-xs text-destructive">{errors.totalValue.message}</p>}
         </div>
         <div className="space-y-1.5">
           <Label>Presupuesto mensual (COP)</Label>
-          <Input type="number" placeholder="55000000" />
+          <Input type="number" placeholder="55000000" {...register("monthlyBudget")} />
+          {errors.monthlyBudget && <p className="text-xs text-destructive">{errors.monthlyBudget.message}</p>}
         </div>
         <div className="space-y-1.5">
           <Label>Fecha de inicio</Label>
-          <Input type="date" />
+          <Input type="date" {...register("startDate")} />
+          {errors.startDate && <p className="text-xs text-destructive">{errors.startDate.message}</p>}
         </div>
         <div className="space-y-1.5">
           <Label>Fecha de fin</Label>
-          <Input type="date" />
+          <Input type="date" {...register("endDate")} />
+          {errors.endDate && <p className="text-xs text-destructive">{errors.endDate.message}</p>}
         </div>
         <div className="space-y-1.5">
           <Label>Coordinador</Label>
-          <Select defaultValue="u2">
+          <Select defaultValue="u2" onValueChange={(v) => setValue("coordinatorId", v)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="u2">Andrea Méndez</SelectItem>
@@ -191,7 +245,7 @@ function NewContractDialog({ onClose }: { onClose: () => void }) {
         </div>
         <div className="space-y-1.5">
           <Label>Estado</Label>
-          <Select defaultValue="activo">
+          <Select defaultValue="activo" onValueChange={(v) => setValue("status", v)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="activo">Activo</SelectItem>
@@ -201,8 +255,10 @@ function NewContractDialog({ onClose }: { onClose: () => void }) {
           </Select>
         </div>
         <DialogFooter className="sm:col-span-2">
-          <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" variant="brand">Guardar contrato</Button>
+          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
+          <Button type="submit" variant="brand" disabled={isSubmitting}>
+            {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Guardando...</> : "Guardar contrato"}
+          </Button>
         </DialogFooter>
       </form>
     </DialogContent>

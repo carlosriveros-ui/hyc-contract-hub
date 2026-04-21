@@ -17,11 +17,24 @@ export default function TechnicianHome() {
 
   if (!user) return null;
 
-  // Mock: activities for this technician (or sample)
-  const myActivities = activities.filter((a) => a.technicianId === user.id).slice(0, 5);
-  const fallback = myActivities.length === 0 ? activities.slice(0, 4) : myActivities;
+  const myActivities = activities.filter((a) => a.technicianId === user.id && a.status !== "completada" && a.status !== "recibida").slice(0, 5);
+  const initialFallback = myActivities.length === 0 ? activities.filter(a => a.status !== "completada" && a.status !== "recibida").slice(0, 4) : myActivities;
+  
+  const [myActList, setMyActList] = useState<typeof activities>(initialFallback);
+
   const myAttendance = attendance.find((a) => a.technicianId === user.id);
   const currentSite = myAttendance ? getSite(myAttendance.siteId) : getSite("s1");
+
+  const handleComplete = (id: string) => {
+    setMyActList(prev => prev.filter(a => a.id !== id));
+    toast.success("Actividad completada (prototipo)");
+    setCompleteOpen(null);
+  };
+
+  const handleCancel = (id: string) => {
+    setMyActList(prev => prev.filter(a => a.id !== id));
+    toast.warning("Actividad reportada como no realizada (prototipo)");
+  };
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -82,35 +95,43 @@ export default function TechnicianHome() {
         {/* Activities of the day */}
         <div>
           <h2 className="text-sm font-bold uppercase text-muted-foreground tracking-wide mb-2 px-1">
-            Mis actividades de hoy ({fallback.length})
+            Mis actividades de hoy ({myActList.length})
           </h2>
-          <ul className="space-y-2">
-            {fallback.map((a) => (
-              <li key={a.id} className="bg-surface rounded-xl border border-border shadow-card p-4">
-                <div className="flex justify-between items-start gap-2 mb-1">
-                  <p className="font-semibold text-sm flex-1">{a.description}</p>
-                  <Badge variant="outline" className="shrink-0">{a.type}</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">{getSite(a.siteId)?.name}</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="success"
-                    className="h-12 font-bold gap-1.5"
-                    onClick={() => setCompleteOpen(a.id)}
-                  >
-                    <CheckCircle2 className="w-4 h-4" /> Completada
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-12 font-bold gap-1.5"
-                    onClick={() => toast.warning("Marcada como no realizada")}
-                  >
-                    <XCircle className="w-4 h-4" /> No realizada
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {myActList.length === 0 ? (
+            <div className="bg-surface rounded-xl border border-border shadow-card p-8 text-center">
+              <CheckCircle2 className="w-12 h-12 text-success/50 mx-auto mb-3" />
+              <p className="font-semibold text-foreground">¡Todo al día!</p>
+              <p className="text-sm text-muted-foreground">Has completado todas tus actividades.</p>
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {myActList.map((a) => (
+                <li key={a.id} className="bg-surface rounded-xl border border-border shadow-card p-4">
+                  <div className="flex justify-between items-start gap-2 mb-1">
+                    <p className="font-semibold text-sm flex-1">{a.description}</p>
+                    <Badge variant="outline" className="shrink-0">{a.type}</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">{getSite(a.siteId)?.name}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="success"
+                      className="h-12 font-bold gap-1.5"
+                      onClick={() => setCompleteOpen(a.id)}
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> Completar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-12 font-bold gap-1.5"
+                      onClick={() => handleCancel(a.id)}
+                    >
+                      <XCircle className="w-4 h-4" /> No realizada
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Materials received */}
@@ -155,7 +176,7 @@ export default function TechnicianHome() {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setCompleteOpen(null)}>Cancelar</Button>
-            <Button variant="success" onClick={() => { toast.success("Actividad completada"); setCompleteOpen(null); }}>
+            <Button variant="success" onClick={() => completeOpen && handleComplete(completeOpen)}>
               Confirmar
             </Button>
           </DialogFooter>

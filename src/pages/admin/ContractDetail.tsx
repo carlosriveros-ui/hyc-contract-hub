@@ -127,7 +127,7 @@ export default function ContractDetail() {
                       <span className="text-xs text-muted-foreground">{tech.name}</span>
                     </div>
                   )}
-                  <Button variant="ghost" size="sm" className="mt-3 w-full text-primary hover:text-primary hover:bg-primary/5">
+                  <Button variant="ghost" size="sm" className="mt-3 w-full text-primary hover:text-primary hover:bg-primary/5" onClick={() => navigate("/actividades")}>
                     Ver actividades →
                   </Button>
                 </div>
