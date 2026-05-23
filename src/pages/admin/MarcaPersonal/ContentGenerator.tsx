@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Platform, ContentFormat, ContentTone, TrendingSource } from "@/types/content";
 import { PLATFORM_LABELS, FORMAT_LABELS } from "@/types/content";
-import { generatedContents } from "@/data/mockContent";
+import { generatePlatformContent } from "@/lib/contentAI";
 import {
   Sparkles, Copy, Check, RefreshCw, Linkedin, Instagram,
   Facebook, BookOpen, Bookmark, ChevronRight, Wand2,
@@ -95,17 +95,7 @@ export function ContentGenerator({ prefillSource, onSave }: Props) {
     );
   };
 
-  const simulateGeneration = () => {
-    // In production this calls the Claude API
-    const mockByPlatform: Partial<Record<Platform, string>> = {};
-    for (const platform of selectedPlatforms) {
-      const sample = generatedContents.find((c) => c.platform === platform);
-      mockByPlatform[platform] = sample?.body ?? `[Contenido generado para ${PLATFORM_LABELS[platform]}]\n\nTema: ${topic || "construcción e IA"}\nFormato: ${FORMAT_LABELS[selectedFormat]}\nTono: ${selectedTone}\n\n(Conecta la API de Claude para generación real de contenido)`;
-    }
-    return mockByPlatform as Record<Platform, string>;
-  };
-
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!topic.trim() && !prefillSource) {
       toast.error("Escribe el tema o pega el contenido fuente");
       return;
@@ -115,13 +105,24 @@ export function ContentGenerator({ prefillSource, onSave }: Props) {
       return;
     }
     setIsGenerating(true);
-    setTimeout(() => {
-      const result = simulateGeneration();
+    try {
+      const result = await generatePlatformContent({
+        topic: topic || prefillSource?.summary || "",
+        sourceTitle: prefillSource?.title,
+        sourceAuthor: prefillSource?.author,
+        platforms: selectedPlatforms,
+        format: selectedFormat,
+        tone: selectedTone,
+      });
       setGenerated(result);
       setActivePlatformTab(selectedPlatforms[0]);
-      setIsGenerating(false);
       toast.success("Contenido generado exitosamente");
-    }, 2200);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error desconocido";
+      toast.error(`Error al generar: ${message}`);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleCopy = (platform: Platform) => {
