@@ -16,6 +16,7 @@ import CostsControl from "./pages/admin/CostsControl";
 import Attendance from "./pages/admin/Attendance";
 import PettyCash from "./pages/admin/PettyCash";
 import ComingSoon from "./pages/ComingSoon";
+import MarcaPersonalHub from "./pages/admin/MarcaPersonal";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/costos" element={<RequireAuth roles={["admin", "coordinador"]}><CostsControl /></RequireAuth>} />
             <Route path="/asistencia" element={<RequireAuth roles={["admin", "coordinador"]}><Attendance /></RequireAuth>} />
             <Route path="/caja-menor" element={<RequireAuth roles={["admin", "coordinador", "tecnico"]}><PettyCash /></RequireAuth>} />
+            <Route path="/marca-personal" element={<RequireAuth roles={["admin"]}><MarcaPersonalHub /></RequireAuth>} />
             <Route path="/reportes" element={<RequireAuth roles={["admin"]}><ComingSoon title="Reportes" /></RequireAuth>} />
             <Route path="/configuracion" element={<RequireAuth><ComingSoon title="Configuración" /></RequireAuth>} />
             <Route path="*" element={<NotFound />} />
