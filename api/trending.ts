@@ -57,6 +57,30 @@ const RSS_FEEDS: RssFeed[] = [
     platform: "blog",
     defaultCategory: "ia_tecnologia",
   },
+  {
+    url: "https://www.construmatica.com/feed",
+    sourceName: "Construmática",
+    platform: "blog",
+    defaultCategory: "construccion",
+  },
+  {
+    url: "https://obras.com.mx/feed/",
+    sourceName: "Obras Web México",
+    platform: "blog",
+    defaultCategory: "construccion",
+  },
+  {
+    url: "https://www.infraestructuradigital.com/feed/",
+    sourceName: "Infraestructura Digital",
+    platform: "blog",
+    defaultCategory: "ia_tecnologia",
+  },
+  {
+    url: "https://www.pmi.org/blog/feed",
+    sourceName: "PMI Blog",
+    platform: "blog",
+    defaultCategory: "gestion_proyectos",
+  },
 ];
 
 const CATEGORY_KEYWORDS: Record<string, string[]> = {

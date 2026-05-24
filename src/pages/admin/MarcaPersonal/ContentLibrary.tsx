@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Platform, ContentStatus } from "@/types/content";
 import { PLATFORM_LABELS, PLATFORM_TEXT_COLORS, FORMAT_LABELS } from "@/types/content";
-import { Copy, Check, Linkedin, Instagram, Facebook, BookOpen, Eye, Filter, Trash2, RefreshCw } from "lucide-react";
+import { Copy, Check, Linkedin, Instagram, Facebook, BookOpen, Eye, Filter, Trash2, RefreshCw, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { fetchLibrary, deleteFromLibrary, type LibraryItem } from "@/lib/libraryService";
+import { fetchLibrary, deleteFromLibrary, scheduleLibraryItem, type LibraryItem } from "@/lib/libraryService";
 
 function TikTokIcon({ className }: { className?: string }) {
   return (
@@ -30,10 +30,23 @@ const STATUS_STYLES: Record<ContentStatus, string> = {
   publicado: "bg-green-100 text-green-700",
 };
 
-function ContentCard({ item, onDelete }: { item: LibraryItem; onDelete: (id: string) => void }) {
+function ContentCard({
+  item,
+  onDelete,
+  onSchedule,
+}: {
+  item: LibraryItem;
+  onDelete: (id: string) => void;
+  onSchedule: (id: string, date: string) => void;
+}) {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showScheduler, setShowScheduler] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState(
+    item.scheduled_for ? item.scheduled_for.split("T")[0] : ""
+  );
+  const [scheduling, setScheduling] = useState(false);
 
   const platform = item.platform as Platform;
   const Icon = PLATFORM_ICONS[platform] ?? BookOpen;
@@ -58,6 +71,23 @@ function ContentCard({ item, onDelete }: { item: LibraryItem; onDelete: (id: str
     }
   };
 
+  const handleSchedule = async () => {
+    if (!scheduleDate) return;
+    setScheduling(true);
+    try {
+      await scheduleLibraryItem(item.id, scheduleDate);
+      onSchedule(item.id, scheduleDate);
+      toast.success("Contenido programado para " + new Date(scheduleDate + "T12:00:00").toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }));
+      setShowScheduler(false);
+    } catch {
+      toast.error("Error al programar");
+    } finally {
+      setScheduling(false);
+    }
+  };
+
+  const currentStatus = item.status;
+
   return (
     <div className="bg-surface border border-border rounded-xl p-5 space-y-3 hover:border-primary/30 transition-colors">
       {/* Header */}
@@ -70,8 +100,8 @@ function ContentCard({ item, onDelete }: { item: LibraryItem; onDelete: (id: str
           <Badge variant="outline" className="text-xs">
             {FORMAT_LABELS[item.format as keyof typeof FORMAT_LABELS] ?? item.format}
           </Badge>
-          <Badge className={cn("text-xs border-0", STATUS_STYLES[item.status])}>
-            {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+          <Badge className={cn("text-xs border-0", STATUS_STYLES[currentStatus])}>
+            {currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1)}
           </Badge>
         </div>
         <span className="text-xs text-muted-foreground shrink-0">
@@ -89,6 +119,14 @@ function ContentCard({ item, onDelete }: { item: LibraryItem; onDelete: (id: str
         </p>
       )}
 
+      {/* Scheduled date */}
+      {item.scheduled_for && !showScheduler && (
+        <p className="text-xs text-blue-600 font-medium">
+          Programado:{" "}
+          {new Date(item.scheduled_for + (item.scheduled_for.includes("T") ? "" : "T12:00:00")).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })}
+        </p>
+      )}
+
       {/* Body preview */}
       <div>
         <p className={cn("text-xs text-muted-foreground leading-relaxed whitespace-pre-line", !expanded && "line-clamp-4")}>
@@ -101,6 +139,30 @@ function ContentCard({ item, onDelete }: { item: LibraryItem; onDelete: (id: str
         )}
       </div>
 
+      {/* Inline scheduler */}
+      {showScheduler && (
+        <div className="flex items-center gap-2 pt-2 border-t border-border">
+          <input
+            type="date"
+            value={scheduleDate}
+            onChange={(e) => setScheduleDate(e.target.value)}
+            min={new Date().toISOString().split("T")[0]}
+            className="text-xs border border-border rounded px-2 py-1 bg-background flex-1 focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <Button
+            size="sm"
+            className="h-6 text-xs px-2"
+            onClick={handleSchedule}
+            disabled={!scheduleDate || scheduling}
+          >
+            {scheduling ? "..." : "Guardar"}
+          </Button>
+          <Button size="sm" variant="ghost" className="h-6 px-1.5 text-xs" onClick={() => setShowScheduler(false)}>
+            ✕
+          </Button>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="flex items-center justify-between gap-2 pt-1 border-t border-border">
         <span className="text-xs text-muted-foreground">
@@ -112,6 +174,15 @@ function ContentCard({ item, onDelete }: { item: LibraryItem; onDelete: (id: str
           </Button>
           <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleCopy}>
             {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className={cn("h-7 px-2", showScheduler ? "text-primary" : "")}
+            onClick={() => setShowScheduler((s) => !s)}
+            title="Programar publicación"
+          >
+            <CalendarClock className="w-3.5 h-3.5" />
           </Button>
           <Button
             size="sm"
@@ -153,6 +224,14 @@ export function ContentLibrary({ refreshTrigger }: Props) {
   useEffect(() => { load(); }, [load, refreshTrigger]);
 
   const handleDelete = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
+
+  const handleSchedule = (id: string, date: string) => {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === id ? { ...i, scheduled_for: date, status: "programado" as const } : i
+      )
+    );
+  };
 
   const filtered = items.filter((c) => {
     if (filterPlatform !== "all" && c.platform !== filterPlatform) return false;
@@ -216,7 +295,7 @@ export function ContentLibrary({ refreshTrigger }: Props) {
       {!loading && (
         <div className="grid gap-4 md:grid-cols-2">
           {filtered.map((item) => (
-            <ContentCard key={item.id} item={item} onDelete={handleDelete} />
+            <ContentCard key={item.id} item={item} onDelete={handleDelete} onSchedule={handleSchedule} />
           ))}
         </div>
       )}

@@ -10,6 +10,7 @@ export interface LibraryItem {
   character_count: number;
   status: "borrador" | "programado" | "publicado";
   saved_at: string;
+  scheduled_for?: string | null;
 }
 
 export async function fetchLibrary(): Promise<LibraryItem[]> {
@@ -27,6 +28,15 @@ export async function saveToLibrary(item: Omit<LibraryItem, "id" | "saved_at" | 
   });
   if (!res.ok) throw new Error("Error al guardar");
   return res.json() as Promise<LibraryItem>;
+}
+
+export async function scheduleLibraryItem(id: string, scheduled_for: string): Promise<void> {
+  const res = await fetch(`/api/library?id=${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scheduled_for, status: "programado" }),
+  });
+  if (!res.ok) throw new Error("Error al programar");
 }
 
 export async function deleteFromLibrary(id: string): Promise<void> {

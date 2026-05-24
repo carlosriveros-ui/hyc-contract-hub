@@ -10,7 +10,7 @@ function getSupabase() {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PATCH, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") {
@@ -48,6 +48,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { error } = await supabase.from("library").insert(item);
       if (error) throw error;
       return res.status(201).json(item);
+    }
+
+    if (req.method === "PATCH") {
+      const id = req.query.id as string;
+      if (!id) return res.status(400).json({ error: "id requerido" });
+      const updates: Record<string, unknown> = {};
+      if (req.body.scheduled_for !== undefined) updates.scheduled_for = req.body.scheduled_for;
+      if (req.body.status !== undefined) updates.status = req.body.status;
+      if (Object.keys(updates).length === 0) return res.status(400).json({ error: "Sin cambios" });
+      const { error } = await supabase.from("library").update(updates).eq("id", id);
+      if (error) throw error;
+      return res.status(200).json({ ok: true });
     }
 
     if (req.method === "DELETE") {
