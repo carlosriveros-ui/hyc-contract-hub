@@ -173,9 +173,11 @@ async function fetchFeed(feed: RssFeed): Promise<object[]> {
         String(item.description ?? item.summary ?? item.content ?? "")
       );
       const pubDate = String(item.pubDate ?? item.published ?? item.updated ?? new Date().toISOString());
-      const author = String(
-        item["dc:creator"] ?? item.author?.name ?? item.author ?? feed.sourceName
-      );
+      const rawAuthor = item["dc:creator"] ?? item.author;
+      const author = typeof rawAuthor === "string" ? rawAuthor
+        : typeof rawAuthor === "object" && rawAuthor !== null
+          ? ((rawAuthor as Record<string, string>).name ?? (rawAuthor as Record<string, string>)["#text"] ?? feed.sourceName)
+          : feed.sourceName;
       const category = categorize(title, description) ?? feed.defaultCategory;
       const score = engagementScore(pubDate);
 

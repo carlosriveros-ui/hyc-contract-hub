@@ -255,7 +255,11 @@ async function fetchFeed(feed) {
       const link = String(item.link ?? item["@_href"] ?? item.url ?? "#");
       const description = cleanHtml(String(item.description ?? item.summary ?? item.content ?? ""));
       const pubDate = String(item.pubDate ?? item.published ?? item.updated ?? new Date().toISOString());
-      const author = String(item["dc:creator"] ?? item.author?.name ?? item.author ?? feed.sourceName);
+      const rawAuthor = item["dc:creator"] ?? item.author;
+      const author = typeof rawAuthor === "string" ? rawAuthor
+        : typeof rawAuthor === "object" && rawAuthor !== null
+          ? (rawAuthor.name ?? rawAuthor["#text"] ?? feed.sourceName)
+          : feed.sourceName;
       const category = categorize(title, description);
       return {
         id: `${feed.sourceName.replace(/\s/g, "-").toLowerCase()}-${idx}-${Date.now()}`,
