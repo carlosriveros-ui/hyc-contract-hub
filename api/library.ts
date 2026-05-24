@@ -1,8 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { createClient } from "@supabase/supabase-js";
 
-// In-memory storage for Vercel serverless (stateless between invocations)
-// For production persistence, replace with Supabase or PlanetScale
-const memoryStore: object[] = [];
+function getSupabase() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_KEY;
+  if (!url || !key) throw new Error("Supabase no configurado (falta SUPABASE_URL o SUPABASE_SERVICE_KEY)");
+  return createClient(url, key);
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -14,23 +18,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.end();
   }
 
-  if (req.method === "GET") {
-    return res.status(200).json({ items: memoryStore });
-  }
+  try {
+    const supabase = getSupabase();
 
-  if (req.method === "POST") {
-    const item = { ...req.body, id: `lib-${Date.now()}`, savedAt: new Date().toISOString() };
-    memoryStore.unshift(item);
-    return res.status(201).json(item);
-  }
+    if (req.method === "GET") {
+      const { data, error } = await supabase
+        .from("library")
+        .select("*")
+        .order("saved_at", { ascending: false });
+      if (error) throw error;
+      return res.status(200).json({ items: data });
+    }
 
-  if (req.method === "DELETE") {
-    const { id } = req.query;
-    const idx = memoryStore.findIndex((i: Record<string, unknown>) => i.id === id);
-    if (idx === -1) return res.status(404).json({ error: "No encontrado" });
-    memoryStore.splice(idx, 1);
-    return res.status(200).json({ ok: true });
-  }
+    if (req.method === "POST") {
+      const d = req.body;
+      const item = {
+        id: `lib-${Date.now()}`,
+        topic: d.topic ?? "",
+        platform: d.platform ?? "",
+        format: d.format ?? "",
+        tone: d.tone ?? "",
+        body: d.body ?? "",
+        source_title: d.source_title ?? null,
+        source_author: d.source_author ?? null,
+        character_count: d.body?.length ?? 0,
+        status: "borrador",
+        saved_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from("library").insert(item);
+      if (error) throw error;
+      return res.status(201).json(item);
+    }
 
-  return res.status(405).json({ error: "Method not allowed" });
+    if (req.method === "DELETE") {
+      const id = req.query.id as string;
+      if (!id) return res.status(400).json({ error: "id requerido" });
+      const { error } = await supabase.from("library").delete().eq("id", id);
+      if (error) throw error;
+      return res.status(200).json({ ok: true });
+    }
+
+    return res.status(405).json({ error: "Method not allowed" });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error interno";
+    return res.status(500).json({ error: message });
+  }
 }
