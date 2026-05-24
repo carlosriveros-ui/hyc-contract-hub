@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Platform, ContentFormat, ContentTone, TrendingSource } from "@/types/content";
 import { PLATFORM_LABELS, FORMAT_LABELS } from "@/types/content";
 import { generatePlatformContent } from "@/lib/contentAI";
+import { saveToLibrary } from "@/lib/libraryService";
 import {
   Sparkles, Copy, Check, RefreshCw, Linkedin, Instagram,
   Facebook, BookOpen, Bookmark, ChevronRight, Wand2,
@@ -134,9 +135,22 @@ export function ContentGenerator({ prefillSource, onSave }: Props) {
     }
   };
 
-  const handleSave = (platform: Platform) => {
-    onSave?.(generated[platform], platform);
-    toast.success("Guardado en tu biblioteca");
+  const handleSave = async (platform: Platform) => {
+    try {
+      await saveToLibrary({
+        topic: topic || prefillSource?.summary || "",
+        platform,
+        format: selectedFormat,
+        tone: selectedTone,
+        body: generated[platform],
+        source_title: prefillSource?.title,
+        source_author: prefillSource?.author,
+      });
+      onSave?.(generated[platform], platform);
+      toast.success(`Guardado en biblioteca · ${PLATFORM_LABELS[platform]}`);
+    } catch {
+      toast.error("Error al guardar. ¿Está corriendo el servidor?");
+    }
   };
 
   const hasGenerated = Object.keys(generated).length > 0;

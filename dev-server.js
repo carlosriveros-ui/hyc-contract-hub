@@ -2,8 +2,31 @@
 // Ejecutar con: node dev-server.js
 import "dotenv/config";
 import http from "http";
+import path from "path";
+import { fileURLToPath } from "url";
+import Database from "better-sqlite3";
 import Anthropic from "@anthropic-ai/sdk";
 import { XMLParser } from "fast-xml-parser";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// ── SQLite setup ──────────────────────────────────────────────────────────────
+const db = new Database(path.join(__dirname, "data", "library.db"));
+db.exec(`
+  CREATE TABLE IF NOT EXISTS library (
+    id TEXT PRIMARY KEY,
+    topic TEXT,
+    platform TEXT,
+    format TEXT,
+    tone TEXT,
+    body TEXT,
+    source_title TEXT,
+    source_author TEXT,
+    character_count INTEGER,
+    status TEXT DEFAULT 'borrador',
+    saved_at TEXT
+  )
+`);
 
 const SYSTEM_PROMPT = `Eres el ghostwriter y estratega de contenido digital de Carlos Riveros, un experto colombiano en construcción, ingeniería civil, gestión de proyectos y el uso de inteligencia artificial en el sector de la construcción. Tu trabajo es transformar temas, artículos o ideas en contenido original, auténtico y de alto impacto para su marca personal.
 
@@ -181,6 +204,8 @@ Adapta el contenido al formato y estilo específico de cada plataforma. Responde
         res.end(JSON.stringify({ error: err.message ?? "Error interno" }));
       }
     });
+  } else if (req.url?.startsWith("/api/library")) {
+    handleLibrary(req, res);
   } else if (req.method === "GET" && req.url?.startsWith("/api/trending")) {
     const forceRefresh = req.url.includes("refresh=true");
     handleTrending(res, forceRefresh);
@@ -189,6 +214,56 @@ Adapta el contenido al formato y estilo específico de cada plataforma. Responde
     res.end("Not found");
   }
 });
+
+// ── Library handler ──────────────────────────────────────────────────────────
+
+function handleLibrary(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Content-Type", "application/json");
+
+  if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
+
+  if (req.method === "GET") {
+    const items = db.prepare("SELECT * FROM library ORDER BY saved_at DESC").all();
+    res.writeHead(200);
+    return res.end(JSON.stringify({ items }));
+  }
+
+  if (req.method === "POST") {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", () => {
+      try {
+        const d = JSON.parse(body);
+        const id = `lib-${Date.now()}`;
+        const savedAt = new Date().toISOString();
+        db.prepare(`
+          INSERT INTO library (id, topic, platform, format, tone, body, source_title, source_author, character_count, status, saved_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(id, d.topic ?? "", d.platform ?? "", d.format ?? "", d.tone ?? "", d.body ?? "", d.sourceTitle ?? "", d.sourceAuthor ?? "", d.body?.length ?? 0, "borrador", savedAt);
+        res.writeHead(201);
+        res.end(JSON.stringify({ id, ...d, savedAt }));
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (req.method === "DELETE") {
+    const id = req.url.split("?id=")[1];
+    if (!id) { res.writeHead(400); return res.end(JSON.stringify({ error: "id requerido" })); }
+    db.prepare("DELETE FROM library WHERE id = ?").run(id);
+    res.writeHead(200);
+    return res.end(JSON.stringify({ ok: true }));
+  }
+
+  res.writeHead(405);
+  res.end(JSON.stringify({ error: "Method not allowed" }));
+}
 
 // ── Trending RSS handler ──────────────────────────────────────────────────────
 

@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { generatedContents } from "@/data/mockContent";
-import type { Platform, ContentStatus, GeneratedContent } from "@/types/content";
+import type { Platform, ContentStatus } from "@/types/content";
 import { PLATFORM_LABELS, PLATFORM_TEXT_COLORS, FORMAT_LABELS } from "@/types/content";
-import { Copy, Check, Linkedin, Instagram, Facebook, BookOpen, Eye, Filter } from "lucide-react";
+import { Copy, Check, Linkedin, Instagram, Facebook, BookOpen, Eye, Filter, Trash2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { fetchLibrary, deleteFromLibrary, type LibraryItem } from "@/lib/libraryService";
 
 function TikTokIcon({ className }: { className?: string }) {
   return (
@@ -30,17 +30,32 @@ const STATUS_STYLES: Record<ContentStatus, string> = {
   publicado: "bg-green-100 text-green-700",
 };
 
-function ContentCard({ content }: { content: GeneratedContent }) {
+function ContentCard({ item, onDelete }: { item: LibraryItem; onDelete: (id: string) => void }) {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const Icon = PLATFORM_ICONS[content.platform];
-  const platformColor = PLATFORM_TEXT_COLORS[content.platform];
+  const [deleting, setDeleting] = useState(false);
+
+  const platform = item.platform as Platform;
+  const Icon = PLATFORM_ICONS[platform] ?? BookOpen;
+  const platformColor = PLATFORM_TEXT_COLORS[platform] ?? "text-foreground";
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(content.body);
+    navigator.clipboard.writeText(item.body);
     setCopied(true);
     toast.success("Contenido copiado al portapapeles");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteFromLibrary(item.id);
+      onDelete(item.id);
+      toast.success("Eliminado de la biblioteca");
+    } catch {
+      toast.error("Error al eliminar");
+      setDeleting(false);
+    }
   };
 
   return (
@@ -50,73 +65,62 @@ function ContentCard({ content }: { content: GeneratedContent }) {
         <div className="flex items-center gap-2 flex-wrap">
           <div className={cn("flex items-center gap-1.5 text-sm font-semibold", platformColor)}>
             <Icon className="w-4 h-4" />
-            {PLATFORM_LABELS[content.platform]}
+            {PLATFORM_LABELS[platform] ?? platform}
           </div>
           <Badge variant="outline" className="text-xs">
-            {FORMAT_LABELS[content.format]}
+            {FORMAT_LABELS[item.format as keyof typeof FORMAT_LABELS] ?? item.format}
           </Badge>
-          <Badge className={cn("text-xs", STATUS_STYLES[content.status])}>
-            {content.status.charAt(0).toUpperCase() + content.status.slice(1)}
+          <Badge className={cn("text-xs border-0", STATUS_STYLES[item.status])}>
+            {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
           </Badge>
         </div>
         <span className="text-xs text-muted-foreground shrink-0">
-          {new Date(content.createdAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short" })}
+          {new Date(item.saved_at).toLocaleDateString("es-CO", { day: "2-digit", month: "short" })}
         </span>
       </div>
 
       {/* Topic */}
-      <p className="text-sm font-medium text-foreground">{content.topic}</p>
+      <p className="text-sm font-medium text-foreground line-clamp-2">{item.topic}</p>
+
+      {/* Source */}
+      {item.source_title && (
+        <p className="text-xs text-muted-foreground">
+          Fuente: <span className="font-medium">{item.source_title}</span>
+        </p>
+      )}
 
       {/* Body preview */}
-      <div className="relative">
+      <div>
         <p className={cn("text-xs text-muted-foreground leading-relaxed whitespace-pre-line", !expanded && "line-clamp-4")}>
-          {content.body}
+          {item.body}
         </p>
-        {content.body.length > 300 && (
-          <button
-            onClick={() => setExpanded((e) => !e)}
-            className="text-xs text-primary font-medium mt-1 hover:underline"
-          >
+        {item.body.length > 250 && (
+          <button onClick={() => setExpanded((e) => !e)} className="text-xs text-primary font-medium mt-1 hover:underline">
             {expanded ? "Ver menos" : "Ver completo"}
           </button>
         )}
       </div>
 
-      {/* Hashtags */}
-      {content.hashtags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {content.hashtags.slice(0, 5).map((tag) => (
-            <span key={tag} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-              {tag}
-            </span>
-          ))}
-          {content.hashtags.length > 5 && (
-            <span className="text-[10px] text-muted-foreground px-1">+{content.hashtags.length - 5}</span>
-          )}
-        </div>
-      )}
-
-      {/* Visual suggestion */}
-      {content.suggestedVisual && (
-        <div className="bg-muted/50 rounded-lg px-3 py-2 text-xs text-muted-foreground border border-border">
-          <span className="font-medium text-foreground">Visual sugerido: </span>
-          {content.suggestedVisual}
-        </div>
-      )}
-
       {/* Footer */}
-      <div className="flex items-center justify-between gap-2 pt-1">
+      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border">
         <span className="text-xs text-muted-foreground">
-          {content.characterCount.toLocaleString()} caracteres
+          {item.character_count.toLocaleString()} chars · {item.tone}
         </span>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={() => setExpanded((e) => !e)}>
+        <div className="flex gap-1.5">
+          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setExpanded((e) => !e)}>
             <Eye className="w-3.5 h-3.5" />
-            {expanded ? "Colapsar" : "Ver"}
           </Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={handleCopy}>
+          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleCopy}>
             {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-            {copied ? "Copiado" : "Copiar"}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-destructive hover:text-destructive"
+            onClick={handleDelete}
+            disabled={deleting}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
@@ -124,11 +128,33 @@ function ContentCard({ content }: { content: GeneratedContent }) {
   );
 }
 
-export function ContentLibrary() {
+interface Props {
+  refreshTrigger?: number;
+}
+
+export function ContentLibrary({ refreshTrigger }: Props) {
+  const [items, setItems] = useState<LibraryItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filterPlatform, setFilterPlatform] = useState<Platform | "all">("all");
   const [filterStatus, setFilterStatus] = useState<ContentStatus | "all">("all");
 
-  const filtered = generatedContents.filter((c) => {
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await fetchLibrary();
+      setItems(data);
+    } catch {
+      toast.error("No se pudo cargar la biblioteca. ¿Está corriendo el servidor?");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load, refreshTrigger]);
+
+  const handleDelete = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
+
+  const filtered = items.filter((c) => {
     if (filterPlatform !== "all" && c.platform !== filterPlatform) return false;
     if (filterStatus !== "all" && c.status !== filterStatus) return false;
     return true;
@@ -154,9 +180,7 @@ export function ContentLibrary() {
                 onClick={() => setFilterPlatform(p)}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
-                  filterPlatform === p
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border text-muted-foreground hover:border-primary/50"
+                  filterPlatform === p ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
                 )}
               >
                 {Icon && <Icon className="w-3 h-3" />}
@@ -165,39 +189,47 @@ export function ContentLibrary() {
             );
           })}
         </div>
-        <div className="flex gap-1.5 flex-wrap sm:ml-2 sm:pl-2 sm:border-l sm:border-border">
+        <div className="flex gap-1.5 flex-wrap sm:ml-auto">
           {statuses.map((s) => (
             <button
               key={s}
               onClick={() => setFilterStatus(s)}
               className={cn(
                 "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
-                filterStatus === s
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border text-muted-foreground hover:border-primary/50"
+                filterStatus === s ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"
               )}
             >
               {s === "all" ? "Todos" : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
           ))}
+          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={load} disabled={loading}>
+            <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
+          </Button>
         </div>
       </div>
 
       <p className="text-sm text-muted-foreground">
-        {filtered.length} pieza{filtered.length !== 1 ? "s" : ""} de contenido
+        {loading ? "Cargando..." : `${filtered.length} pieza${filtered.length !== 1 ? "s" : ""} guardada${filtered.length !== 1 ? "s" : ""}`}
       </p>
 
       {/* Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {filtered.map((content) => (
-          <ContentCard key={content.id} content={content} />
-        ))}
-      </div>
+      {!loading && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {filtered.map((item) => (
+            <ContentCard key={item.id} item={item} onDelete={handleDelete} />
+          ))}
+        </div>
+      )}
 
-      {filtered.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="font-medium">No hay contenido con estos filtros</p>
+      {!loading && filtered.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground">
+          <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-20" />
+          <p className="font-medium">
+            {items.length === 0 ? "Aún no has guardado contenido" : "No hay contenido con estos filtros"}
+          </p>
+          <p className="text-sm mt-1">
+            {items.length === 0 ? "Genera contenido y haz clic en Guardar para verlo aquí" : "Prueba cambiando los filtros"}
+          </p>
         </div>
       )}
     </div>
