@@ -3,6 +3,7 @@
 import "dotenv/config";
 import http from "http";
 import Anthropic from "@anthropic-ai/sdk";
+import { XMLParser } from "fast-xml-parser";
 
 const SYSTEM_PROMPT = `Eres el ghostwriter y estratega de contenido digital de Carlos Riveros, un experto colombiano en construcción, ingeniería civil, gestión de proyectos y el uso de inteligencia artificial en el sector de la construcción. Tu trabajo es transformar temas, artículos o ideas en contenido original, auténtico y de alto impacto para su marca personal.
 
@@ -180,11 +181,120 @@ Adapta el contenido al formato y estilo específico de cada plataforma. Responde
         res.end(JSON.stringify({ error: err.message ?? "Error interno" }));
       }
     });
+  } else if (req.method === "GET" && req.url?.startsWith("/api/trending")) {
+    const forceRefresh = req.url.includes("refresh=true");
+    handleTrending(res, forceRefresh);
   } else {
     res.writeHead(404);
     res.end("Not found");
   }
 });
+
+// ── Trending RSS handler ──────────────────────────────────────────────────────
+
+const RSS_FEEDS = [
+  { url: "https://www.constructiondive.com/feeds/news/", sourceName: "Construction Dive", platform: "blog", defaultCategory: "construccion" },
+  { url: "https://www.bdcnetwork.com/rss.xml", sourceName: "Building Design+Construction", platform: "blog", defaultCategory: "construccion" },
+  { url: "https://www.forconstructionpros.com/rss/all", sourceName: "For Construction Pros", platform: "blog", defaultCategory: "construccion" },
+  { url: "https://www.autodesk.com/blogs/construction/feed/", sourceName: "Autodesk Construction", platform: "blog", defaultCategory: "ia_tecnologia" },
+  { url: "https://www.enr.com/rss/all", sourceName: "Engineering News-Record", platform: "blog", defaultCategory: "construccion" },
+  { url: "https://www.procore.com/jobsite/feed/", sourceName: "Procore Jobsite", platform: "blog", defaultCategory: "gestion_proyectos" },
+];
+
+const CATEGORY_KEYWORDS = {
+  ia_tecnologia: ["AI", "artificial intelligence", "machine learning", "BIM", "digital twin", "automation", "robot", "drone", "software", "tech", "inteligencia artificial", "tecnología", "digital", "IoT", "sensor", "data", "analytics", "ChatGPT", "LLM", "generative"],
+  construccion: ["construction", "building", "concrete", "steel", "structure", "foundation", "contractor", "project", "site", "infrastructure", "obra", "construcción", "edificio", "puente", "contratista", "prefabricated", "modular"],
+  gestion_proyectos: ["project management", "schedule", "budget", "cost", "risk", "procurement", "contract", "milestone", "PMI", "agile", "lean", "gestión", "cronograma", "presupuesto", "riesgo"],
+  materiales: ["material", "concrete", "steel", "wood", "timber", "insulation", "sustainable", "green", "recycled", "cement", "asphalt", "concreto", "acero", "madera", "sostenible"],
+  liderazgo: ["leadership", "team", "culture", "diversity", "workforce", "talent", "training", "skills", "career", "liderazgo", "equipo"],
+  tendencias: ["trend", "future", "forecast", "2025", "2026", "innovation", "disruption", "market", "tendencia", "futuro", "innovación"],
+};
+
+function categorize(title, description) {
+  const text = `${title} ${description}`.toLowerCase();
+  const scores = {};
+  for (const [cat, kws] of Object.entries(CATEGORY_KEYWORDS)) {
+    scores[cat] = kws.filter((kw) => text.includes(kw.toLowerCase())).length;
+  }
+  const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
+  return best[1] > 0 ? best[0] : "construccion";
+}
+
+function engagementScore(pubDate) {
+  const hoursAgo = (Date.now() - new Date(pubDate).getTime()) / 3_600_000;
+  if (isNaN(hoursAgo)) return 60;
+  if (hoursAgo < 6) return 95;
+  if (hoursAgo < 24) return 90;
+  if (hoursAgo < 48) return 82;
+  if (hoursAgo < 96) return 74;
+  if (hoursAgo < 168) return 65;
+  return 55;
+}
+
+function cleanHtml(html) {
+  return (html ?? "").replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/\s{2,}/g, " ").trim().slice(0, 280);
+}
+
+function formatDate(pubDate) {
+  const d = new Date(pubDate);
+  return isNaN(d.getTime()) ? pubDate : d.toISOString().split("T")[0];
+}
+
+async function fetchFeed(feed) {
+  try {
+    const res = await fetch(feed.url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; ContentBot/1.0)" }, signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return [];
+    const xml = await res.text();
+    const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_" });
+    const parsed = parser.parse(xml);
+    const channel = parsed?.rss?.channel ?? parsed?.feed;
+    if (!channel) return [];
+    const rawItems = channel.item ?? channel.entry ?? [];
+    return rawItems.slice(0, 5).map((item, idx) => {
+      const title = String(item.title ?? "Sin título").trim();
+      const link = String(item.link ?? item["@_href"] ?? item.url ?? "#");
+      const description = cleanHtml(String(item.description ?? item.summary ?? item.content ?? ""));
+      const pubDate = String(item.pubDate ?? item.published ?? item.updated ?? new Date().toISOString());
+      const author = String(item["dc:creator"] ?? item.author?.name ?? item.author ?? feed.sourceName);
+      const category = categorize(title, description);
+      return {
+        id: `${feed.sourceName.replace(/\s/g, "-").toLowerCase()}-${idx}-${Date.now()}`,
+        title, summary: description || `Artículo de ${feed.sourceName}`, url: link,
+        source: feed.sourceName, author, category,
+        engagementScore: engagementScore(pubDate),
+        publishedAt: formatDate(pubDate),
+        tags: [category.replace("_", " ")],
+        platform: feed.platform,
+        readTime: Math.max(2, Math.round(description.length / 200)),
+      };
+    });
+  } catch (e) {
+    console.warn(`Feed failed: ${feed.sourceName}`, e.message);
+    return [];
+  }
+}
+
+let trendingCache = null;
+const CACHE_TTL = 30 * 60 * 1000;
+
+async function handleTrending(res, forceRefresh) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Content-Type", "application/json");
+  if (!forceRefresh && trendingCache && Date.now() - trendingCache.fetchedAt < CACHE_TTL) {
+    res.writeHead(200);
+    return res.end(JSON.stringify({ items: trendingCache.items, cached: true }));
+  }
+  try {
+    const results = await Promise.allSettled(RSS_FEEDS.map(fetchFeed));
+    const items = results.flatMap((r) => r.status === "fulfilled" ? r.value : []).sort((a, b) => b.engagementScore - a.engagementScore);
+    trendingCache = { items, fetchedAt: Date.now() };
+    res.writeHead(200);
+    res.end(JSON.stringify({ items, cached: false, fetchedAt: trendingCache.fetchedAt }));
+  } catch (err) {
+    res.writeHead(500);
+    res.end(JSON.stringify({ error: err.message }));
+  }
+}
 
 server.listen(3001, () => {
   console.log("API local corriendo en http://localhost:3001");
