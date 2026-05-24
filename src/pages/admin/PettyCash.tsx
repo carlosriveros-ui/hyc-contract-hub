@@ -1,27 +1,67 @@
 import { AppShell } from "@/components/AppShell";
 import { KpiCard } from "@/components/KpiCard";
-import { pettyCash, getUser } from "@/data/mock";
+import { useState, useEffect } from "react";
+import { pettyCashApi, usersApi } from "@/lib/dataService";
 import { formatCOP, formatDateShort } from "@/lib/format";
 import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Coins, CheckCircle2, XCircle, Camera } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 import { toast } from "sonner";
+import type { PettyCashEntry, User } from "@/types";
 
 const PIE_COLORS = ["hsl(var(--primary))", "hsl(var(--info))", "hsl(var(--success))", "hsl(var(--warning))", "hsl(var(--pink))"];
 
 export default function PettyCash() {
+  const [pettyCash, setPettyCash] = useState<PettyCashEntry[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([pettyCashApi.list(), usersApi.list()])
+      .then(([pc, u]) => { setPettyCash(pc); setUsers(u); })
+      .catch(() => toast.error("Error al cargar caja menor"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const getUser = (id: string) => users.find((u) => u.id === id);
+
+  const handleStatus = async (id: string, status: "aprobado" | "rechazado") => {
+    setUpdating(id);
+    try {
+      await pettyCashApi.update(id, { status });
+      setPettyCash((prev) => prev.map((p) => p.id === id ? { ...p, status } : p));
+      toast.success(status === "aprobado" ? "Gasto aprobado" : "Gasto rechazado");
+    } catch {
+      toast.error("Error al actualizar");
+    } finally {
+      setUpdating(null);
+    }
+  };
+
   const approved = pettyCash.filter((p) => p.status === "aprobado").reduce((s, p) => s + p.amount, 0);
   const pending = pettyCash.filter((p) => p.status === "pendiente").reduce((s, p) => s + p.amount, 0);
 
-  // by user
   const byUser = pettyCash.reduce<Record<string, number>>((acc, p) => {
     const name = getUser(p.userId)?.name ?? "—";
     acc[name] = (acc[name] ?? 0) + p.amount;
     return acc;
   }, {});
   const pieData = Object.entries(byUser).map(([name, value]) => ({ name, value }));
+
+  if (loading) {
+    return (
+      <AppShell title="Caja Menor" subtitle="Aprobación de gastos menores">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)}
+        </div>
+        <Skeleton className="h-64 rounded-lg" />
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell title="Caja Menor" subtitle="Aprobación de gastos menores">
@@ -54,10 +94,10 @@ export default function PettyCash() {
                 </div>
                 {p.status === "pendiente" ? (
                   <div className="flex flex-col gap-1.5">
-                    <Button size="sm" variant="success" className="h-7 px-2" onClick={() => toast.success("Gasto aprobado")}>
+                    <Button size="sm" variant="success" className="h-7 px-2" disabled={updating === p.id} onClick={() => handleStatus(p.id, "aprobado")}>
                       <CheckCircle2 className="w-3.5 h-3.5" />
                     </Button>
-                    <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => toast.error("Gasto rechazado")}>
+                    <Button size="sm" variant="outline" className="h-7 px-2" disabled={updating === p.id} onClick={() => handleStatus(p.id, "rechazado")}>
                       <XCircle className="w-3.5 h-3.5" />
                     </Button>
                   </div>

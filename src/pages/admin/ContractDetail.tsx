@@ -1,22 +1,69 @@
 import { AppShell } from "@/components/AppShell";
 import { useParams, useNavigate } from "react-router-dom";
-import { contracts, sites, getUser, costEntries } from "@/data/mock";
+import { useState, useEffect } from "react";
+import { contractsApi, sitesApi, usersApi } from "@/lib/dataService";
 import { formatCOP, formatDate, timeProgress } from "@/lib/format";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar } from "@/components/Avatar";
 import { ArrowLeft, Plus, Search, FileText } from "lucide-react";
+import { toast } from "sonner";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import type { Contract, Site, User } from "@/types";
 
 export default function ContractDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const contract = contracts.find((c) => c.id === id);
-  if (!contract) return <AppShell title="Contrato no encontrado"><p>No existe</p></AppShell>;
+  const [contract, setContract] = useState<Contract | null>(null);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [siteSearch, setSiteSearch] = useState("");
 
-  const contractSites = sites.filter((s) => s.contractId === contract.id);
+  useEffect(() => {
+    if (!id) return;
+    Promise.all([
+      contractsApi.get(id),
+      sitesApi.list({ contractId: id }),
+      usersApi.list(),
+    ])
+      .then(([c, s, u]) => { setContract(c); setSites(s); setUsers(u); })
+      .catch(() => toast.error("Error al cargar el contrato"))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <AppShell title="Cargando contrato..." actions={
+        <Button variant="ghost" size="sm" onClick={() => navigate("/contratos")}>
+          <ArrowLeft className="w-4 h-4" /> Volver
+        </Button>
+      }>
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-64 rounded-lg" />
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (!contract) {
+    return (
+      <AppShell title="Contrato no encontrado" actions={
+        <Button variant="ghost" size="sm" onClick={() => navigate("/contratos")}>
+          <ArrowLeft className="w-4 h-4" /> Volver
+        </Button>
+      }>
+        <p className="text-muted-foreground">El contrato no existe o fue eliminado.</p>
+      </AppShell>
+    );
+  }
+
+  const getUser = (uid: string) => users.find((u) => u.id === uid);
+  const contractSites = sites.filter((s) => !siteSearch || s.name.toLowerCase().includes(siteSearch.toLowerCase()));
   const progress = timeProgress(contract.startDate, contract.endDate);
 
   // Monthly cost line data
@@ -47,7 +94,7 @@ export default function ContractDetail() {
       <Tabs defaultValue="resumen">
         <TabsList>
           <TabsTrigger value="resumen">Resumen</TabsTrigger>
-          <TabsTrigger value="sedes">Sedes ({contractSites.length})</TabsTrigger>
+          <TabsTrigger value="sedes">Sedes ({sites.length})</TabsTrigger>
           <TabsTrigger value="equipo">Equipo</TabsTrigger>
           <TabsTrigger value="documentos">Documentos</TabsTrigger>
         </TabsList>
@@ -103,7 +150,7 @@ export default function ContractDetail() {
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between mb-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Buscar sede..." className="pl-9" />
+              <Input placeholder="Buscar sede..." value={siteSearch} onChange={(e) => setSiteSearch(e.target.value)} className="pl-9" />
             </div>
             <Button variant="outline-brand" size="sm" className="gap-1.5">
               <Plus className="w-4 h-4" /> Agregar Sede

@@ -7,27 +7,60 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
 import {
-  contracts, sites, users, attendance, costEntries, monthlyActivityCounts, getUser, getSite,
-} from "@/data/mock";
+  contractsApi, sitesApi, usersApi, attendanceApi, costsApi, activitiesApi, materialsApi,
+} from "@/lib/dataService";
 import { formatCOP, formatDate, timeProgress } from "@/lib/format";
 import { FileText, Building2, HardHat, Bell, ArrowRight, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import type { Contract, Site, User, AttendanceEntry, CostEntry, Activity, Material } from "@/types";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";
 
 export default function DashboardAdmin() {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceEntry[]>([]);
+  const [costEntries, setCostEntries] = useState<CostEntry[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const today = new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1200);
-    return () => clearTimeout(timer);
-  }, []);
+    Promise.all([
+      contractsApi.list(),
+      sitesApi.list(),
+      usersApi.list(),
+      attendanceApi.list({ date: today }),
+      costsApi.list(),
+      activitiesApi.list(),
+      materialsApi.list(),
+    ])
+      .then(([c, s, u, a, ce, ac, m]) => {
+        setContracts(c); setSites(s); setUsers(u); setAttendance(a);
+        setCostEntries(ce); setActivities(ac); setMaterials(m);
+      })
+      .catch(() => toast.error("Error al cargar dashboard"))
+      .finally(() => setLoading(false));
+  }, [today]);
+
+  const getUser = (id: string) => users.find((u) => u.id === id);
+  const getSite = (id: string) => sites.find((s) => s.id === id);
+
   const techsToday = users.filter((u) => u.role === "tecnico");
   const techsCheckedIn = attendance.length;
 
-  // Chart data: cost by category (April)
+  const completadas = activities.filter((a) => a.status === "completada").length;
+  const enProceso = activities.filter((a) => a.status === "ejecucion").length;
+  const pendientes = activities.filter((a) => a.status === "solicitada" || a.status === "programada").length;
+  const recibidas = activities.filter((a) => a.status === "recibida").length;
+  const alerts = materials.filter((m) => m.stock <= m.minStock).length;
+
   const categoryColors: Record<string, string> = {
     Nómina: "hsl(var(--secondary))",
     Pintura: "hsl(var(--primary))",
@@ -44,10 +77,11 @@ export default function DashboardAdmin() {
   const chartData = Object.entries(aggCosts)
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
+  const monthSpent = costEntries.reduce((s, c) => s + c.value, 0);
 
   return (
     <AppShell title="Dashboard" subtitle="Panel ejecutivo · Abril 2026">
-      {isLoading ? (
+      {loading ? (
         <div className="animate-fade-in space-y-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
@@ -60,16 +94,12 @@ export default function DashboardAdmin() {
               </div>
             ))}
           </div>
-          
           <div>
             <Skeleton className="h-4 w-40 mt-8 mb-4" />
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               {[...Array(2)].map((_, i) => (
                 <div key={i} className="bg-surface rounded-lg border border-border shadow-card p-5 space-y-4">
-                  <div>
-                    <Skeleton className="h-6 w-1/3 mb-2" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </div>
+                  <Skeleton className="h-6 w-1/3 mb-2" />
                   <Skeleton className="h-10 w-full" />
                   <Skeleton className="h-10 w-full" />
                   <div className="pt-4 flex items-center justify-between">
@@ -107,7 +137,7 @@ export default function DashboardAdmin() {
             />
             <KpiCard
               label="Alertas pendientes"
-              value={<span className="text-destructive">7</span>}
+              value={<span className="text-destructive">{alerts}</span>}
               icon={Bell}
               accent="destructive"
             />
@@ -121,8 +151,7 @@ export default function DashboardAdmin() {
             {contracts.map((c) => {
               const progress = timeProgress(c.startDate, c.endDate);
               const progressColor = progress < 60 ? "bg-success" : progress < 85 ? "bg-warning" : "bg-destructive";
-              const monthSpent = 48_200_000;
-              const budgetRatio = Math.round((monthSpent / c.monthlyBudget) * 100);
+              const budgetRatio = c.monthlyBudget > 0 ? Math.round((monthSpent / c.monthlyBudget) * 100) : 0;
 
               return (
                 <div key={c.id} className="bg-surface rounded-lg border border-border shadow-card p-5 animate-fade-in hover:-translate-y-1 hover:shadow-md transition-all duration-300">
@@ -152,12 +181,12 @@ export default function DashboardAdmin() {
                     <div>
                       <div className="flex items-center justify-between text-xs mb-1.5">
                         <span className="text-muted-foreground font-medium">
-                          Costo abril <span className="text-foreground font-semibold">{formatCOP(monthSpent)}</span> / {formatCOP(c.monthlyBudget)}
+                          Costo mes <span className="text-foreground font-semibold">{formatCOP(monthSpent)}</span> / {formatCOP(c.monthlyBudget)}
                         </span>
                         <span className="font-semibold tabular-nums text-warning">{budgetRatio}%</span>
                       </div>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-info" style={{ width: `${budgetRatio}%` }} />
+                        <div className="h-full bg-info" style={{ width: `${Math.min(budgetRatio, 100)}%` }} />
                       </div>
                     </div>
                   </div>
@@ -165,28 +194,27 @@ export default function DashboardAdmin() {
                   {/* Activities chips */}
                   <div className="mt-4 flex flex-wrap gap-2">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-success/10 text-success text-xs font-semibold">
-                      <span className="w-1.5 h-1.5 rounded-full bg-success" /> {monthlyActivityCounts.completadas} Completadas
+                      <span className="w-1.5 h-1.5 rounded-full bg-success" /> {completadas} Completadas
                     </span>
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-info/10 text-info text-xs font-semibold">
-                      <span className="w-1.5 h-1.5 rounded-full bg-info" /> {monthlyActivityCounts.enProceso} En proceso
+                      <span className="w-1.5 h-1.5 rounded-full bg-info" /> {enProceso} En proceso
                     </span>
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-warning/15 text-warning text-xs font-semibold">
-                      <span className="w-1.5 h-1.5 rounded-full bg-warning" /> {monthlyActivityCounts.pendientes} Pendientes
+                      <span className="w-1.5 h-1.5 rounded-full bg-warning" /> {pendientes} Pendientes
                     </span>
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-status-received/10 text-status-received text-xs font-semibold">
-                      ✓ {monthlyActivityCounts.recibidas} Recibidas
+                      ✓ {recibidas} Recibidas
                     </span>
                   </div>
 
                   {/* Alerts */}
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-destructive/10 text-destructive text-xs font-medium">
-                      <AlertTriangle className="w-3 h-3" /> 3 materiales sin devolución
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-destructive/10 text-destructive text-xs font-medium">
-                      <AlertTriangle className="w-3 h-3" /> 1 contratista sin recibo
-                    </span>
-                  </div>
+                  {alerts > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-destructive/10 text-destructive text-xs font-medium">
+                        <AlertTriangle className="w-3 h-3" /> {alerts} material{alerts !== 1 ? "es" : ""} bajo stock mínimo
+                      </span>
+                    </div>
+                  )}
 
                   <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">Coordinador: {getUser(c.coordinatorId)?.name}</span>
@@ -205,7 +233,7 @@ export default function DashboardAdmin() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-bold text-foreground">Costos por categoría</h3>
-                  <p className="text-xs text-muted-foreground">Abril 2026 · Total {formatCOP(48_200_000)}</p>
+                  <p className="text-xs text-muted-foreground">Total {formatCOP(monthSpent)}</p>
                 </div>
               </div>
               <div className="mt-4 h-[320px] -ml-2">

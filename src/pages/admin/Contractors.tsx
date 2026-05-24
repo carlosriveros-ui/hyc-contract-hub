@@ -1,9 +1,13 @@
 import { AppShell } from "@/components/AppShell";
-import { contractors } from "@/data/mock";
+import { useState, useEffect } from "react";
+import { contractorsApi } from "@/lib/dataService";
 import { formatCOP } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
+import type { Contractor } from "@/types";
 
 const statusCfg: Record<string, { label: string; className: string }> = {
   proceso: { label: "En proceso", className: "bg-info/15 text-info border-info/30" },
@@ -13,6 +17,26 @@ const statusCfg: Record<string, { label: string; className: string }> = {
 };
 
 export default function Contractors() {
+  const [contractors, setContractors] = useState<Contractor[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    contractorsApi.list()
+      .then(setContractors)
+      .catch(() => toast.error("Error al cargar contratistas"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <AppShell title="Contratistas" subtitle="Gestión y avance de obras tercerizadas">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-48 rounded-lg" />)}
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell title="Contratistas" subtitle="Gestión y avance de obras tercerizadas"
       actions={<Button variant="brand" size="sm" className="gap-1.5"><Plus className="w-4 h-4" /> Nuevo contratista</Button>}

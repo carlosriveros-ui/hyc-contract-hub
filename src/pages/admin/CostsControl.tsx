@@ -1,23 +1,50 @@
 import { AppShell } from "@/components/AppShell";
 import { KpiCard } from "@/components/KpiCard";
-import { costEntries } from "@/data/mock";
+import { useState, useEffect, useMemo } from "react";
+import { costsApi } from "@/lib/dataService";
 import { formatCOP, formatDateShort } from "@/lib/format";
 import { Wallet, TrendingUp, TrendingDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
+import { toast } from "sonner";
+import type { CostEntry } from "@/types";
 
 export default function CostsControl() {
+  const [costEntries, setCostEntries] = useState<CostEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    costsApi.list()
+      .then(setCostEntries)
+      .catch(() => toast.error("Error al cargar costos"))
+      .finally(() => setLoading(false));
+  }, []);
+
   const total = costEntries.reduce((s, c) => s + c.value, 0);
   const budget = 55_000_000;
   const pct = Math.round((total / budget) * 100);
 
-  // Prev month vs current
-  const cats = ["Nómina", "Pintura", "Fachada", "Materiales", "Transportes", "Caja Menor", "Otros"];
-  const chartData = cats.map((cat) => {
+  // Prev month vs current — prev month simulated as 85-115% of actual per category
+  const cats = useMemo(() => ["Nómina", "Pintura", "Fachada", "Materiales", "Transportes", "Caja Menor", "Otros"], []);
+  const chartData = useMemo(() => cats.map((cat, i) => {
     const actual = costEntries.filter((c) => c.category === cat).reduce((s, c) => s + c.value, 0);
-    return { categoria: cat, Marzo: Math.round(actual * (0.85 + Math.random() * 0.3)), Abril: actual };
-  });
+    const prevRatios = [0.87, 1.12, 0.93, 1.05, 0.88, 0.97, 1.15];
+    return { categoria: cat, Marzo: Math.round(actual * prevRatios[i]), Abril: actual };
+  }), [cats, costEntries]);
+
+  if (loading) {
+    return (
+      <AppShell title="Control de Costos" subtitle="Cargando...">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)}
+        </div>
+        <Skeleton className="h-64 rounded-lg mb-6" />
+        <Skeleton className="h-48 rounded-lg" />
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell title="Control de Costos" subtitle="Abril 2026"
