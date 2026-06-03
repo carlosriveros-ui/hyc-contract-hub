@@ -89,18 +89,14 @@ class UpworkTelegramBot:
             )
 
     async def _send_job_alert(self, job: dict):
-        rating_stars = '⭐' * int(job.get('client_rating', 0))
         score = job.get('score', 0)
-        score_emoji = '🔥' if score >= 40 else '✅' if score >= 25 else '📋'
+        score_emoji = '🔥' if score >= 25 else '✅' if score >= 15 else '📋'
 
         text = (
-            f'{score_emoji} *Nuevo Job — Score {score}/60*\n\n'
+            f'{score_emoji} *Nuevo Job — Score {score}/35*\n\n'
             f'📌 *{job["title"]}*\n\n'
-            f'💰 Budget: `{job["budget"]}`\n'
-            f'👥 Applicants: `{job.get("applicants", "?")}`\n'
-            f'⭐ Client rating: `{job.get("client_rating", "?")}` {rating_stars}\n'
-            f'✅ Payment: `{"Verified" if job.get("payment_verified") else "Not verified"}`\n\n'
-            f'📝 _{job.get("description", "")[:200]}..._\n\n'
+            f'💰 Budget: `{job["budget"]}`\n\n'
+            f'📝 _{job.get("description", "")[:300]}..._\n\n'
             f'🔗 [Ver en Upwork]({job["url"]})'
         )
 
