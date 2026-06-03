@@ -177,6 +177,19 @@ class UpworkScraper:
                     await browser.close()
                     return []
 
+            # Si hay CF challenge, esperar que el usuario lo resuelva
+            try:
+                cf = page.locator('text="Verifique que es un ser humano"').or_(
+                    page.locator('text="Verify you are human"')
+                )
+                if await cf.count() > 0:
+                    logger.info('CF challenge detectado — marca la casilla en el navegador...')
+                    await cf.wait_for(state='hidden', timeout=120000)
+                    logger.info('CF resuelto, continuando...')
+                    await asyncio.sleep(2)
+            except Exception:
+                pass
+
             # Esperar a que React cargue los jobs
             try:
                 await page.wait_for_load_state('networkidle', timeout=15000)
