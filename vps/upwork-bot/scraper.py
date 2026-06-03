@@ -188,89 +188,107 @@ class UpworkScraper:
         return self._dedup(all_jobs)
 
     async def _eval_job_feed(self, page, seen_ids: set) -> list[dict]:
-        """Try multiple API calls from within the authenticated browser context."""
+        """Capture auth headers from a real browser GraphQL call, then use them for job feed."""
 
-        # Build JS that tries several endpoints and returns first successful result
-        js = r"""
-        async () => {
-            const get = async (url, opts) => {
-                try {
-                    const r = await fetch(url, {credentials: 'include', ...opts});
-                    const ct = r.headers.get('content-type') || '';
-                    const body = await r.text();
-                    return {status: r.status, ct, body: body.substring(0, 8000)};
-                } catch(e) { return {status: 0, error: e.message}; }
-            };
+        captured = {}  # url → {headers, body}
 
-            const post = (url, payload) => get(url, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-                body: JSON.stringify(payload),
-            });
+        async def on_request(request):
+            if '/api/graphql/v1' in request.url and request.method == 'POST':
+                try:
+                    hdrs = await request.all_headers()
+                    body = request.post_data or ''
+                    alias = request.url.split('alias=')[-1].split('&')[0] if 'alias=' in request.url else 'unknown'
+                    captured[alias] = {'headers': hdrs, 'body': body, 'url': request.url}
+                    auth = hdrs.get('authorization', '')
+                    logger.info(f'GQL req [{alias}] auth={bool(auth)} headers={list(hdrs.keys())[:8]}')
+                except Exception as e:
+                    logger.debug(f'Request capture err: {e}')
 
-            // 1. REST search
-            const r1 = await get('/ab/jobs/search/?q=construction+project+manager&sort=recency&paging=0;20', {
-                headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'}
-            });
-            if (r1.status === 200 && r1.ct.includes('json')) return {src: 'rest', ...r1};
+        page.on('request', on_request)
 
-            // 2. GraphQL best-matches (field name discovery — returns error with hints)
-            const r2 = await post('/api/graphql/v1?alias=bestMatches', {
-                query: `query { freelancerBestMatches(pagination:{offset:0,count:10}) {
-                    results { ciphertext title snippet jobType hourlyBudgetMin hourlyBudgetMax
-                              client { feedbackScore paymentVerificationStatus }
-                              proposalsTier } } }`
-            });
-            if (r2.status === 200) return {src: 'gql_bestMatches', ...r2};
-
-            // 3. GraphQL with alternate field name
-            const r3 = await post('/api/graphql/v1?alias=jobSearch', {
-                query: `query JSearch($q:String!) { jobSearch(q:$q, pagination:{offset:0,count:10}) {
-                    results { ciphertext title snippet } } }`,
-                variables: {q: 'construction project manager'}
-            });
-            if (r3.status === 200) return {src: 'gql_jobSearch', ...r3};
-
-            // 4. v3 REST
-            const r4 = await get('/api/v3/talent/jobs/recommended?limit=20', {
-                headers: {'Accept': 'application/json'}
-            });
-            if (r4.status === 200) return {src: 'v3_recommended', ...r4};
-
-            // Return whatever we got for diagnostics
-            return {src: 'none', r1_status: r1.status, r2_status: r2.status,
-                    r2_body: r2.body ? r2.body.substring(0,500) : '',
-                    r3_status: r3.status, r4_status: r4.status};
-        }
-        """
-
+        # Reload to trigger fresh batch of GraphQL config calls
         try:
-            result = await page.evaluate(js)
-            src = result.get('src', 'none')
-            logger.info(f'eval result src={src} status={result.get("status")} r1={result.get("r1_status")} r2={result.get("r2_status")} r3={result.get("r3_status")} r4={result.get("r4_status")}')
+            await page.reload(wait_until='domcontentloaded', timeout=25000)
+        except Exception:
+            pass
+        try:
+            await page.wait_for_load_state('networkidle', timeout=20000)
+        except Exception:
+            pass
+        await asyncio.sleep(3)
 
-            if src == 'none':
-                r2_body = result.get('r2_body', '')
-                if r2_body:
-                    logger.info(f'GraphQL error hint: {r2_body[:400]}')
-                return []
+        page.remove_listener('request', on_request)
 
-            body = result.get('body', '')
-            if not body:
-                return []
-
-            try:
-                data = json.loads(body)
-            except Exception:
-                logger.warning(f'No es JSON. Body[:200]: {body[:200]}')
-                return []
-
-            logger.info(f'eval data src={src} keys={list(data.keys())[:8]}')
-            return self._parse_api_response(data, seen_ids)
-
-        except Exception as e:
-            logger.error(f'eval_job_feed error: {e}')
+        if not captured:
+            logger.warning('No GraphQL requests captured from browser')
             return []
+
+        # Pick any captured request to borrow its auth headers
+        sample = next(iter(captured.values()))
+        auth_headers = sample['headers']
+        auth = auth_headers.get('authorization', '')
+        logger.info(f'Auth token found: {bool(auth)} — aliases captured: {list(captured.keys())[:8]}')
+
+        if not auth:
+            logger.warning('No Authorization header in GraphQL requests — session may lack token')
+
+        # Try job feed queries using the real browser auth headers via page.evaluate
+        # Pass the token as a parameter so fetch() uses it
+        queries = [
+            ('freelancerBestMatches', '''
+                query { freelancerBestMatches(pagination:{offset:0,count:10}) {
+                    results { ciphertext title snippet jobType
+                              hourlyBudgetMin hourlyBudgetMax
+                              client { feedbackScore paymentVerificationStatus }
+                              proposalsTier } } }'''),
+            ('searchJobs', '''
+                query SearchJobs($q:String) {
+                  jobSearch(q:$q, pagination:{offset:0,count:10}) {
+                    results { ciphertext title snippet } } }'''),
+            ('recommendedJobs', 'query { recommendedJobs { results { ciphertext title snippet } } }'),
+        ]
+
+        for alias, query in queries:
+            try:
+                result = await page.evaluate("""
+                    async ({alias, query, authToken}) => {
+                        const headers = {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        };
+                        if (authToken) headers['Authorization'] = authToken;
+                        const r = await fetch('/api/graphql/v1?alias=' + alias, {
+                            method: 'POST',
+                            headers,
+                            credentials: 'include',
+                            body: JSON.stringify({query, variables: {q: 'construction project manager'}})
+                        });
+                        const body = await r.text();
+                        return {status: r.status, body: body.substring(0, 3000)};
+                    }
+                """, {'alias': alias, 'query': query, 'authToken': auth})
+
+                status = result.get('status', 0)
+                body = result.get('body', '')
+                logger.info(f'GQL [{alias}] status={status} body={body[:200]}')
+
+                if status == 200 and body:
+                    try:
+                        data = json.loads(body)
+                        jobs = self._parse_api_response(data, seen_ids)
+                        if jobs:
+                            logger.info(f'{len(jobs)} jobs vía GQL [{alias}]')
+                            return jobs
+                        # Log what fields came back for debugging
+                        nested = data.get('data', {}) or {}
+                        logger.info(f'GQL [{alias}] data.keys={list(nested.keys())[:10]}')
+                    except Exception as e:
+                        logger.warning(f'GQL parse error [{alias}]: {e}')
+
+            except Exception as e:
+                logger.error(f'GQL eval error [{alias}]: {e}')
+
+        return []
 
     # ── Cookie loading for Playwright context ───────────────────────────────
 
