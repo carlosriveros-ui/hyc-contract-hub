@@ -146,21 +146,29 @@ class UpworkScraper:
             await username_input.fill(self.email)
             await asyncio.sleep(0.5)
 
-            await page.locator('#login_password_continue').click()
-            await asyncio.sleep(5)  # Upwork tiene animación CSS en este campo
+            # Click continue via JS (más confiable que Playwright click en Vue.js)
+            await page.evaluate("document.querySelector('#login_password_continue').click()")
+            await asyncio.sleep(5)
 
-            # Password — el campo existe pero está hidden hasta que termina la animación
-            password_input = page.locator('#login_password')
-            try:
-                await password_input.wait_for(state='visible', timeout=20000)
-                await password_input.click()
-            except PlaywrightTimeout:
-                logger.warning('Password visible timeout — intentando force fill')
-            await asyncio.sleep(0.5)
-            await password_input.fill(self.password, force=True)
-            await asyncio.sleep(0.5)
+            # Password — usar JS para disparar eventos Vue.js correctamente
+            await page.evaluate(
+                """(pwd) => {
+                    const input = document.querySelector('#login_password');
+                    if (!input) return;
+                    const setter = Object.getOwnPropertyDescriptor(
+                        window.HTMLInputElement.prototype, 'value'
+                    ).set;
+                    setter.call(input, pwd);
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                    input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+                }""",
+                self.password
+            )
+            await asyncio.sleep(1)
 
-            await page.locator('#login_control_continue').click(force=True)
+            # Submit via JS
+            await page.evaluate("document.querySelector('#login_control_continue').click()")
 
             try:
                 await page.wait_for_url('**/find-work/**', timeout=25000)
