@@ -218,14 +218,31 @@ class UpworkScraper:
             logger.warning(f'CF challenge en {url} — saltando')
             return []
 
-        # Wait for React to render job tiles (SPA: content loads after initial HTML)
-        tile_selector = 'article[data-test="job-tile"], [data-test="job-tile"], [data-job-uid]'
+        # Wait for React SPA to finish loading jobs via async API calls
         try:
-            await page.wait_for_selector(tile_selector, timeout=15000, state='visible')
+            await page.wait_for_load_state('networkidle', timeout=20000)
+        except Exception:
+            pass
+        await asyncio.sleep(3)
+
+        # Try extended tile selectors (find-work page may use different classes)
+        tile_selector = (
+            'article[data-test="job-tile"], '
+            '[data-test="job-tile"], '
+            '[data-job-uid], '
+            'section[data-test="job-tile"], '
+            '[data-cy="job-tile"], '
+            '.job-tile, '
+            'article.up-card-section'
+        )
+        try:
+            await page.wait_for_selector(tile_selector, timeout=10000, state='visible')
             logger.info('Tiles visibles en DOM')
         except Exception:
-            logger.warning('Timeout esperando tiles — puede que no haya jobs o el render tardó')
-        await asyncio.sleep(2)
+            logger.warning('Timeout tiles — inspeccionando HTML...')
+            # Log more HTML to understand the DOM structure
+            full_html = await page.content()
+            logger.warning(f'HTML (1500 chars): {full_html[:1500]}')
 
         # Try __NEXT_DATA__ (SSR jobs embedded in page)
         try:
@@ -242,9 +259,17 @@ class UpworkScraper:
         except Exception as e:
             logger.debug(f'Error __NEXT_DATA__: {e}')
 
-        # DOM tile extraction
+        # DOM tile extraction — try many selectors
         jobs_raw = []
-        for sel in ['article[data-test="job-tile"]', '[data-test="job-tile"]', '[data-job-uid]']:
+        for sel in [
+            'article[data-test="job-tile"]',
+            '[data-test="job-tile"]',
+            '[data-job-uid]',
+            'section[data-test="job-tile"]',
+            '[data-cy="job-tile"]',
+            '.job-tile article',
+            'article.up-card-section',
+        ]:
             tiles = await page.query_selector_all(sel)
             if tiles:
                 logger.info(f'{len(tiles)} tiles con selector "{sel}"')
