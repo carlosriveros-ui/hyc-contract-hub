@@ -1,5 +1,6 @@
 import { runSecopAgent } from '../agents/secop.js';
-import { runNewsAgent } from '../agents/news.js';
+import { runNewsCarlosAgent } from '../agents/news-carlos.js';
+import { runNewsHycAgent } from '../agents/news-hyc.js';
 import { runPricesAgent } from '../agents/prices.js';
 import { runCommercialAgent } from '../agents/commercial.js';
 import { runTalentAgent } from '../agents/talent.js';
@@ -48,12 +49,20 @@ export async function runDailyTasks(runAgent) {
 export async function runBusinessIntelligenceTasks(runAgent) {
   console.log('[BI] Iniciando tareas de inteligencia de negocio...');
 
-  // Noticias del sector — diario
+  // Noticias marca personal Carlos Riveros — diario
   try {
-    console.log('[BI] Agente de noticias...');
-    await runNewsAgent(runAgent);
+    console.log('[BI] Noticias → Carlos Riveros...');
+    await runNewsCarlosAgent(runAgent);
   } catch (err) {
-    console.error('[BI] Error agente noticias:', err.message);
+    console.error('[BI] Error noticias Carlos:', err.message);
+  }
+
+  // Noticias marca corporativa HYC Proyectos — diario
+  try {
+    console.log('[BI] Noticias → HYC Proyectos...');
+    await runNewsHycAgent(runAgent);
+  } catch (err) {
+    console.error('[BI] Error noticias HYC:', err.message);
   }
 
   // Prospección comercial — diario (rota sector cada día)
