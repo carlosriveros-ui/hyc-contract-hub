@@ -150,37 +150,16 @@ class UpworkScraper:
             await page.locator('#login_password_continue').click()
             await asyncio.sleep(5)
 
-            # Password — usar JS nativo para disparar Vue.js reactivity
-            # (fill() normal no activa los watchers de Vue, el botón queda disabled)
-            await page.evaluate(
-                """(pwd) => {
-                    const input = document.querySelector('#login_password');
-                    if (!input) return;
-                    const setter = Object.getOwnPropertyDescriptor(
-                        window.HTMLInputElement.prototype, 'value'
-                    ).set;
-                    setter.call(input, pwd);
-                    ['input', 'change', 'keyup'].forEach(ev =>
-                        input.dispatchEvent(new Event(ev, { bubbles: true }))
-                    );
-                }""",
-                self.password
-            )
-            await asyncio.sleep(2)  # Esperar que Vue.js habilite el botón submit
+            # Password — focus via JS (campo hidden) y tipear con keyboard
+            # keyboard.type() dispara keydown/keypress/input/keyup → Vue.js reactivity ✓
+            await page.evaluate("document.querySelector('#login_password').focus()")
+            await asyncio.sleep(0.5)
+            await page.keyboard.type(self.password, delay=50)
+            await asyncio.sleep(1)
 
-            # Submit — presionar Enter en el campo password (más confiable que click)
-            try:
-                pwd_field = page.locator('#login_password')
-                await pwd_field.focus(force=True)
-                await asyncio.sleep(0.3)
-                await page.keyboard.press('Enter')
-                logger.info('Enter presionado en campo password')
-            except Exception:
-                # Fallback: JS click en el botón
-                logger.warning('Enter fallido — intentando JS click en submit')
-                await page.evaluate(
-                    "document.querySelector('#login_control_continue')?.click()"
-                )
+            # Submit — Enter desde el teclado
+            await page.keyboard.press('Enter')
+            logger.info('Password tipeado y Enter presionado')
 
             try:
                 await page.wait_for_url('**/find-work/**', timeout=25000)
