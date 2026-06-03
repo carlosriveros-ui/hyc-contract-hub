@@ -2,14 +2,10 @@ import asyncio
 import logging
 import re
 import hashlib
-import json
 import os
-from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
-try:
-    from playwright_stealth import stealth_async
-    HAS_STEALTH = True
-except ImportError:
-    HAS_STEALTH = False
+import urllib.request
+import urllib.parse
+import xml.etree.ElementTree as ET
 
 logger = logging.getLogger('upwork-scraper')
 
@@ -18,16 +14,24 @@ CONSTRUCTION_KEYWORDS = [
     'contractor', 'civil', 'building', 'renovation', 'remodel',
     'infrastructure', 'facilities', 'maintenance', 'structural',
     'general contractor', 'foreman', 'estimator', 'project management',
+    'architect', 'engineer', 'schedule', 'procurement', 'subcontractor',
 ]
 
 SEARCH_QUERIES = [
     'construction project manager',
-    'construction PM',
-    'site manager construction',
     'construction superintendent',
+    'site manager construction',
+    'construction PM remote',
 ]
 
-COOKIES_PATH = os.environ.get('COOKIES_PATH', '/opt/upwork-bot/cookies.json')
+RSS_BASE = 'https://www.upwork.com/ab/feed/jobs/rss'
+HEADERS = {
+    'User-Agent': (
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 '
+        '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    ),
+    'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+}
 
 
 def score_job(job: dict) -> int:
@@ -35,7 +39,7 @@ def score_job(job: dict) -> int:
     text = (job.get('title', '') + ' ' + job.get('description', '')).lower()
 
     kw_hits = sum(1 for kw in CONSTRUCTION_KEYWORDS if kw.lower() in text)
-    score += min(kw_hits * 4, 20)
+    score += min(kw_hits * 3, 21)
 
     rating = job.get('client_rating', 0)
     if rating >= 4.8:
@@ -74,585 +78,103 @@ class UpworkScraper:
         self.password = password
 
     async def get_new_jobs(self, seen_ids: set) -> list[dict]:
-        jobs = []
-        async with async_playwright() as p:
-            use_tor = os.environ.get('USE_TOR', '').lower() in ('1', 'true', 'yes')
-            proxy = {'server': 'socks5://127.0.0.1:9050'} if use_tor else None
-            if use_tor:
-                logger.info('Usando Tor como proxy')
+        all_jobs = []
+        seen = set(seen_ids)
 
-            browser = await p.chromium.launch(
-                headless=True,
-                proxy=proxy,
-                args=[
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-blink-features=AutomationControlled',
-                ],
-            )
-            context = await browser.new_context(
-                viewport={'width': 1366, 'height': 768},
-                user_agent=(
-                    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 '
-                    '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-                ),
-            )
-
-            try:
-                cookies_loaded = await self._load_cookies(context)
-                if not cookies_loaded:
-                    logger.error('No se pudo cargar cookies.json — abortando')
-                    await browser.close()
-                    return []
-
-                page = await context.new_page()
-                if HAS_STEALTH:
-                    await stealth_async(page)
-
-                # Scrape from authenticated find-work pages (no CF challenge, no Tor block)
-                # These pages already show relevant construction jobs based on user's profile
-                # /find-work/best-matches works from VPS without CF challenge
-                # /most-recent gets CF-challenged — skip it
-                found = await self._scrape_feed_page(
-                    page,
-                    'https://www.upwork.com/nx/find-work/best-matches',
-                    seen_ids,
-                )
-                jobs.extend(found)
-
-            except Exception as e:
-                logger.error(f'Error en scraping: {e}')
-            finally:
-                await browser.close()
-
-        seen = set()
-        unique = []
-        for j in jobs:
-            if j['id'] not in seen:
-                seen.add(j['id'])
-                unique.append(j)
-
-        logger.info(f'Total jobs válidos: {len(unique)}')
-        return unique
-
-    async def _load_cookies(self, context) -> bool:
-        try:
-            with open(COOKIES_PATH) as f:
-                raw = json.load(f)
-
-            same_site_map = {
-                'no_restriction': 'None',
-                'lax': 'Lax',
-                'strict': 'Strict',
-                'none': 'None',
-                'unspecified': 'Lax',
-            }
-
-            cookies = []
-            for c in raw:
-                raw_ss = str(c.get('sameSite', 'Lax')).lower()
-                same_site = same_site_map.get(raw_ss, 'Lax')
-                cookie = {
-                    'name': c['name'],
-                    'value': c['value'],
-                    'domain': c.get('domain', '.upwork.com'),
-                    'path': c.get('path', '/'),
-                    'httpOnly': c.get('httpOnly', False),
-                    'secure': c.get('secure', True),
-                    'sameSite': same_site,
-                }
-                if c.get('expirationDate'):
-                    cookie['expires'] = int(c['expirationDate'])
-                cookies.append(cookie)
-
-            await context.add_cookies(cookies)
-            logger.info(f'Cookies cargadas: {len(cookies)}')
-            return True
-
-        except FileNotFoundError:
-            logger.error(f'No se encontró {COOKIES_PATH}')
-            return False
-        except Exception as e:
-            logger.error(f'Error cargando cookies: {e}')
-            return False
-
-    async def _verify_session(self, page) -> bool:
-        logger.info('Verificando sesión...')
-        try:
-            await page.goto(
-                'https://www.upwork.com/nx/find-work/best-matches',
-                wait_until='domcontentloaded',
-                timeout=30000,
-            )
+        for query in SEARCH_QUERIES:
+            jobs = await self._fetch_rss(query, seen)
+            for j in jobs:
+                if j['id'] not in seen:
+                    seen.add(j['id'])
+                    all_jobs.append(j)
             await asyncio.sleep(3)
 
-            current_url = page.url
-            if 'login' in current_url or 'account-security' in current_url:
-                logger.warning(f'Redirigido al login — URL: {current_url}')
-                return False
+        logger.info(f'Total jobs válidos: {len(all_jobs)}')
+        return all_jobs
 
-            logger.info(f'Sesión válida — URL: {current_url[:80]}')
-            return True
+    async def _fetch_rss(self, query: str, seen_ids: set) -> list[dict]:
+        params = urllib.parse.urlencode({
+            'q': query,
+            'sort': 'recency',
+            'paging': '0;20',
+        })
+        url = f'{RSS_BASE}?{params}'
+        logger.info(f'RSS fetch: {query}')
 
+        try:
+            req = urllib.request.Request(url, headers=HEADERS)
+            loop = asyncio.get_event_loop()
+            xml_bytes = await loop.run_in_executor(
+                None,
+                lambda: urllib.request.urlopen(req, timeout=20).read()
+            )
+            return self._parse_rss(xml_bytes.decode('utf-8', errors='replace'), seen_ids)
         except Exception as e:
-            logger.error(f'Error verificando sesión: {e}')
-            return False
-
-    async def _scrape_feed_page(self, page, url: str, seen_ids: set) -> list[dict]:
-        """
-        Scrape jobs by intercepting API responses as the page loads.
-        The find-work page is CSR — jobs come from JSON API calls, not from the initial HTML.
-        """
-        logger.info(f'Cargando feed con interceptor: {url}')
-
-        captured = []
-
-        async def on_response(response):
-            ct = response.headers.get('content-type', '')
-            if 'application/json' not in ct:
-                return
-            resp_url = response.url
-            if 'upwork.com' not in resp_url:
-                return
-            try:
-                data = await response.json()
-                if not isinstance(data, (dict, list)):
-                    return
-                # Detect job arrays in various response shapes (REST + GraphQL)
-                d = data if isinstance(data, dict) else {}
-                nested = d.get('data', {}) or {}
-                has_jobs = (
-                    isinstance(d.get('results'), list)
-                    or isinstance(d.get('jobs'), list)
-                    or isinstance(nested.get('jobs'), list)
-                    or isinstance(nested.get('results'), list)
-                    or isinstance(nested.get('bestMatches'), list)
-                    or isinstance(nested.get('search', {}).get('jobs', {}).get('edges'), list)
-                    or isinstance(nested.get('searchResults', {}).get('jobs', {}).get('edges'), list)
-                    or isinstance(nested.get('jobSearch', {}).get('results'), list)
-                    or isinstance(nested.get('freelancerBestMatches', {}).get('results'), list)
-                )
-                if has_jobs:
-                    captured.append({'url': resp_url, 'data': data})
-                    logger.info(f'API con jobs capturada: {resp_url}')
-                else:
-                    # Extract alias from GraphQL URL for easier identification
-                    alias_match = re.search(r'alias=([^&]+)', resp_url)
-                    label = alias_match.group(1) if alias_match else resp_url.split('/')[-1][:60]
-                    top_keys = list(d.keys())[:8]
-                    nested_keys = list(nested.keys())[:8] if nested else []
-                    logger.info(f'API [{label}] keys={top_keys} data={nested_keys}')
-            except Exception as e:
-                logger.info(f'API JSON (error parse) {resp_url[:80]}: {e}')
-
-        page.on('response', on_response)
-
-        try:
-            await page.goto(url, wait_until='domcontentloaded', timeout=30000)
-        except Exception as e:
-            logger.error(f'Error navegando a {url}: {e}')
-            page.remove_listener('response', on_response)
+            logger.error(f'Error RSS "{query}": {e}')
             return []
 
-        title = await page.title()
-        current_url = page.url
-        if 'login' in current_url or 'account-security' in current_url or 'blocked' in title.lower():
-            logger.warning(f'Bloqueado/sesión inválida. Title: "{title}"')
-            page.remove_listener('response', on_response)
-            return []
-        if 'just a moment' in title.lower():
-            logger.warning(f'CF challenge en {url}')
-            page.remove_listener('response', on_response)
+    def _parse_rss(self, xml_text: str, seen_ids: set) -> list[dict]:
+        min_score = int(os.environ.get('MIN_SCORE', 12))
+
+        try:
+            root = ET.fromstring(xml_text)
+        except ET.ParseError as e:
+            logger.error(f'XML parse error: {e}')
             return []
 
-        # Wait for initial config API calls to settle
-        try:
-            await page.wait_for_load_state('networkidle', timeout=25000)
-        except Exception:
-            pass
-
-        # Scroll to trigger lazy-loaded job feed component (Intersection Observer)
-        try:
-            await page.evaluate('window.scrollTo(0, 400)')
-            await asyncio.sleep(1)
-            await page.evaluate('window.scrollTo(0, 800)')
-        except Exception:
-            pass
-
-        # Job feed API fires after initial config calls — wait up to 20s
-        deadline = 20
-        for i in range(deadline):
-            if captured:
-                break
-            await asyncio.sleep(1)
-            if i % 5 == 4:
-                logger.info(f'Esperando job feed API... ({i+1}s)')
-
-        page.remove_listener('response', on_response)
-        logger.info(f'APIs JSON con jobs capturadas: {len(captured)}')
-
-        for item in captured:
-            try:
-                jobs = self._parse_api_response(item['data'], seen_ids)
-                if jobs:
-                    logger.info(f'{len(jobs)} jobs válidos de {item["url"]}')
-                    return self._filter_jobs(jobs)
-            except Exception as e:
-                logger.debug(f'Error parseando {item["url"]}: {e}')
-
-        # Log any JSON URLs seen for diagnostics
-        if not captured:
-            logger.warning(f'0 APIs con jobs interceptadas en {url}. Title: "{title}"')
-
-        return []
-
-    async def _search_jobs(self, page, query: str, seen_ids: set) -> list[dict]:
-        url = (
-            f'https://www.upwork.com/nx/jobs/search/'
-            f'?q={query.replace(" ", "+")}&sort=recency&per_page=20'
-        )
-        logger.info(f'Buscando: {query}')
-        await page.goto(url, wait_until='domcontentloaded')
-
-        title = await page.title()
-        if 'just a moment' in title.lower():
-            logger.warning(f'CF challenge en búsqueda — title: {title}')
-            try:
-                await page.wait_for_function(
-                    "document.title.toLowerCase().indexOf('just a moment') === -1",
-                    timeout=20000,
-                )
-            except Exception:
-                logger.warning('CF no resuelto')
-        await asyncio.sleep(4)
+        channel = root.find('channel')
+        if channel is None:
+            logger.warning('No <channel> en RSS')
+            return []
 
         jobs = []
-        try:
-            # Extract __NEXT_DATA__ JSON (all job data is embedded here)
-            next_data_str = await page.evaluate("""
-                () => {
-                    const el = document.getElementById('__NEXT_DATA__');
-                    return el ? el.textContent : null;
-                }
-            """)
-
-            if next_data_str:
-                data = json.loads(next_data_str)
-                jobs = self._parse_next_data(data, seen_ids)
-                logger.info(f'{len(jobs)} jobs via __NEXT_DATA__ para "{query}"')
-                return jobs
-
-            # Fallback: query selector tiles
-            selector_candidates = [
-                'article[data-test="job-tile"]',
-                '[data-test="job-tile"]',
-                'section[data-test="job-tile"]',
-                '[data-job-uid]',
-            ]
-            for sel in selector_candidates:
-                tiles = await page.query_selector_all(sel)
-                if tiles:
-                    logger.info(f'Selector "{sel}" → {len(tiles)} tiles')
-                    for tile in tiles[:15]:
-                        try:
-                            job = await self._extract_tile(tile)
-                            if job and job['id'] not in seen_ids:
-                                job['score'] = score_job(job)
-                                jobs.append(job)
-                        except Exception as e:
-                            logger.debug(f'Error tile: {e}')
-                    break
-
-            if not jobs:
-                html_preview = (await page.content())[:400]
-                logger.warning(f'0 jobs. HTML: {html_preview}')
-
-        except Exception as e:
-            logger.error(f'Error en búsqueda: {e}')
-
-        return self._filter_jobs(jobs)
-
-    async def _extract_tile(self, tile) -> dict | None:
-        title_el = await tile.query_selector('h2 a, [data-test="job-title"] a, h3 a, a[href*="/jobs/"]')
-        if not title_el:
-            return None
-        title = (await title_el.inner_text()).strip()
-        href = await title_el.get_attribute('href')
-        url = f'https://www.upwork.com{href}' if href and href.startswith('/') else href
-        id_match = re.search(r'~([a-zA-Z0-9]+)', url or '')
-        job_id = id_match.group(1) if id_match else hashlib.md5((url or title).encode()).hexdigest()[:12]
-
-        desc_el = await tile.query_selector('[data-test="job-description-text"], .job-description')
-        description = (await desc_el.inner_text()).strip() if desc_el else ''
-        budget_el = await tile.query_selector('[data-test="budget"], [data-test="hourly-rate"]')
-        budget = (await budget_el.inner_text()).strip() if budget_el else 'No especificado'
-        rating_el = await tile.query_selector('[data-test="client-rating"] .sr-only')
-        rating = 0.0
-        if rating_el:
-            nums = re.findall(r'[\d.]+', await rating_el.inner_text())
-            rating = float(nums[0]) if nums else 0.0
-        applicants = 5
-        for el in await tile.query_selector_all('[data-test="proposals-tier"] li, [data-test="proposals"]'):
-            text = await el.inner_text()
-            if 'proposal' in text.lower():
-                nums = re.findall(r'\d+', text)
-                if nums:
-                    applicants = int(nums[0])
-                    break
-        pay_badges = await tile.query_selector_all('[data-test="payment-verified"]')
-        return {
-            'id': job_id,
-            'title': title,
-            'url': url,
-            'description': description[:500],
-            'budget': budget,
-            'client_rating': rating,
-            'applicants': applicants,
-            'payment_verified': len(pay_badges) > 0,
-        }
-
-    def _filter_jobs(self, jobs: list) -> list[dict]:
-        min_score = int(os.environ.get('MIN_SCORE', 20))
-        min_rating = float(os.environ.get('MIN_CLIENT_RATING', 4.0))
-        max_apps = int(os.environ.get('MAX_APPLICANTS', 15))
-        result = []
-        for job in jobs:
-            rating_ok = job.get('client_rating', 0) >= min_rating or job.get('client_rating', 0) == 0.0
-            apps_ok = job.get('applicants', 5) <= max_apps
-            score_ok = job.get('score', 0) >= min_score
-            if rating_ok and apps_ok and score_ok:
-                result.append(job)
-                logger.info(f'✅ Job válido (score={job["score"]}): {job["title"][:50]}')
-            else:
-                logger.debug(f'❌ Filtrado: score={job.get("score",0)}, r={job.get("client_rating",0)}, a={job.get("applicants",0)}')
-        return result
-
-    async def _search_via_fetch(self, page, query: str, seen_ids: set) -> list[dict]:
-        """
-        Fetch search results from within the already-loaded upwork.com page.
-        This avoids Cloudflare's JS challenge because the request is an AJAX call
-        from an authenticated session, not a fresh page navigation.
-        """
-        q = query.replace(' ', '+')
-        logger.info(f'Buscando via fetch interno: {query}')
-
-        # Try endpoints in order
-        endpoints = [
-            f'/ab/jobs/search/?q={q}&sort=recency&paging=0;20',
-            f'/ab/jobs/search/?q={q}&sort=recency',
-            f'/nx/jobs/search/?q={q}&sort=recency&per_page=20',
-        ]
-
-        for endpoint in endpoints:
+        for item in channel.findall('item')[:20]:
             try:
-                result = await page.evaluate(f"""
-                    async () => {{
-                        try {{
-                            const resp = await fetch('{endpoint}', {{
-                                headers: {{
-                                    'X-Requested-With': 'XMLHttpRequest',
-                                    'Accept': 'application/json, text/plain, */*',
-                                }},
-                                credentials: 'include'
-                            }});
-                            const ct = resp.headers.get('content-type') || '';
-                            const text = await resp.text();
-                            return {{
-                                status: resp.status,
-                                contentType: ct,
-                                body: text.substring(0, 8000)
-                            }};
-                        }} catch(e) {{
-                            return {{error: e.message}};
-                        }}
-                    }}
-                """)
+                title = (item.findtext('title') or '').strip()
+                link = (item.findtext('link') or '').strip()
+                raw_desc = (item.findtext('description') or '').strip()
+                pub_date = (item.findtext('pubDate') or '').strip()
+                guid = (item.findtext('guid') or link).strip()
 
-                if result.get('error'):
-                    logger.warning(f'Fetch error en {endpoint}: {result["error"]}')
-                    continue
-
-                status = result.get('status', 0)
-                body = result.get('body', '')
-                ct = result.get('contentType', '')
-
-                logger.info(f'Endpoint {endpoint}: status={status}, ct={ct[:40]}')
-
-                if status != 200 or not body:
-                    continue
-
-                if 'just a moment' in body.lower():
-                    logger.warning('CF challenge en fetch también — IP bloqueada')
-                    continue
-
-                # Parse JSON response
-                if 'json' in ct:
-                    try:
-                        data = json.loads(body)
-                        jobs = self._parse_api_response(data, seen_ids)
-                        logger.info(f'{len(jobs)} jobs via JSON [{endpoint}]')
-                        return jobs
-                    except json.JSONDecodeError:
-                        pass
-
-                # Parse __NEXT_DATA__ from HTML
-                nd_match = re.search(
-                    r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
-                    body, re.DOTALL
-                )
-                if nd_match:
-                    try:
-                        data = json.loads(nd_match.group(1))
-                        jobs = self._parse_next_data(data, seen_ids)
-                        logger.info(f'{len(jobs)} jobs via __NEXT_DATA__ [{endpoint}]')
-                        return jobs
-                    except Exception as e:
-                        logger.warning(f'Error parseando __NEXT_DATA__: {e}')
-
-                logger.warning(f'Respuesta no parseable. Body[:300]: {body[:300]}')
-
-            except Exception as e:
-                logger.error(f'Error evaluando fetch: {e}')
-
-        return []
-
-    def _parse_api_response(self, data: dict, seen_ids: set) -> list[dict]:
-        d = data if isinstance(data, dict) else {}
-        nested = d.get('data', {}) or {}
-
-        # GraphQL edge list → unwrap nodes
-        def unwrap_edges(obj):
-            edges = obj.get('edges', []) if isinstance(obj, dict) else []
-            return [e.get('node', e) for e in edges if isinstance(e, dict)]
-
-        jobs_list = (
-            d.get('jobs')
-            or d.get('results')
-            or nested.get('jobs')
-            or nested.get('results')
-            or nested.get('bestMatches')
-            or unwrap_edges(nested.get('search', {}).get('jobs', {}))
-            or unwrap_edges(nested.get('searchResults', {}).get('jobs', {}))
-            or (nested.get('jobSearch', {}) or {}).get('results')
-            or (nested.get('freelancerBestMatches', {}) or {}).get('results')
-            or []
-        )
-
-        if not jobs_list and isinstance(data, list):
-            jobs_list = data
-
-        if not jobs_list:
-            logger.warning(f'No jobs en JSON. Keys: {list(d.keys())[:10]} data.keys: {list(nested.keys())[:10]}')
-            return []
-
-        return self._build_jobs(jobs_list, seen_ids)
-
-    def _parse_next_data(self, data: dict, seen_ids: set) -> list[dict]:
-        props = data.get('props', {}).get('pageProps', {})
-        jobs_list = (
-            props.get('jobs', {}).get('jobs', [])
-            or props.get('searchResults', {}).get('jobs', {}).get('jobs', [])
-            or props.get('initialData', {}).get('jobs', [])
-            or []
-        )
-        if not jobs_list:
-            logger.warning(f'No jobs en __NEXT_DATA__. pageProps keys: {list(props.keys())[:10]}')
-        return self._build_jobs(jobs_list, seen_ids)
-
-    def _build_jobs(self, jobs_list: list, seen_ids: set) -> list[dict]:
-        min_score = int(os.environ.get('MIN_SCORE', 20))
-        min_rating = float(os.environ.get('MIN_CLIENT_RATING', 4.0))
-        max_apps = int(os.environ.get('MAX_APPLICANTS', 15))
-
-        result = []
-        for item in jobs_list[:20]:
-            try:
-                # ciphertext / id / uid cover REST and GraphQL field names
-                cipher = (
-                    item.get('ciphertext')
-                    or item.get('id')
-                    or item.get('uid')
-                    or ''
-                )
-                cipher = str(cipher)
-                job_id = cipher.lstrip('~') or hashlib.md5(
-                    item.get('title', '').encode()
-                ).hexdigest()[:12]
+                id_match = re.search(r'~([a-zA-Z0-9]+)', link or guid)
+                job_id = id_match.group(1) if id_match else hashlib.md5(guid.encode()).hexdigest()[:12]
 
                 if not job_id or job_id in seen_ids:
                     continue
 
-                client = item.get('client', {}) or {}
-                # GraphQL may use 'totalFeedback' or 'score'
-                rating = float(
-                    client.get('feedbackScore')
-                    or client.get('totalFeedback')
-                    or client.get('score')
-                    or 0
-                )
-
-                proposals = item.get('proposalsTier', '') or item.get('proposals', '') or ''
-                applicants = 5
-                if isinstance(proposals, str):
-                    nums = re.findall(r'\d+', proposals)
-                    if nums:
-                        applicants = int(nums[-1])
-                elif isinstance(proposals, int):
-                    applicants = proposals
-
-                # GraphQL may use 'jobUrl' or build from id
-                raw_url = item.get('jobUrl') or item.get('url') or ''
-                if raw_url and not raw_url.startswith('http'):
-                    raw_url = f'https://www.upwork.com{raw_url}'
-                if not raw_url:
-                    raw_url = f'https://www.upwork.com/jobs/{"~" + cipher if cipher else job_id}'
+                description = re.sub(r'<[^>]+>', ' ', raw_desc)
+                description = re.sub(r'\s+', ' ', description).strip()[:500]
 
                 j = {
                     'id': job_id,
-                    'title': item.get('title', '') or item.get('name', ''),
-                    'url': raw_url,
-                    'description': item.get('snippet', item.get('description', item.get('body', '')))[:500],
-                    'budget': self._fmt_budget(item),
-                    'client_rating': rating,
-                    'applicants': applicants,
-                    'payment_verified': (
-                        client.get('paymentVerificationStatus') == 1
-                        or client.get('paymentVerified') is True
-                    ),
+                    'title': title,
+                    'url': link,
+                    'description': description,
+                    'budget': self._extract_budget(description),
+                    'client_rating': 0.0,
+                    'applicants': 5,
+                    'payment_verified': False,
+                    'posted_at': pub_date,
                 }
                 j['score'] = score_job(j)
 
-                rating_ok = j['client_rating'] >= min_rating or j['client_rating'] == 0.0
-                apps_ok = j['applicants'] <= max_apps
-                score_ok = j['score'] >= min_score
-
-                if rating_ok and apps_ok and score_ok:
-                    result.append(j)
-                    logger.info(f'✅ (score={j["score"]}): {j["title"][:50]}')
+                if j['score'] >= min_score:
+                    jobs.append(j)
+                    logger.info(f'✅ score={j["score"]}: {title[:60]}')
                 else:
-                    logger.debug(
-                        f'❌ Filtrado: score={j["score"]}, '
-                        f'rating={j["client_rating"]}, apps={j["applicants"]}'
-                    )
+                    logger.debug(f'❌ score={j["score"]}: {title[:40]}')
+
             except Exception as e:
-                logger.debug(f'Error construyendo job: {e}')
+                logger.debug(f'Error item RSS: {e}')
 
-        return result
+        logger.info(f'RSS "{xml_text[:30]}..." → {len(jobs)} jobs pasaron filtro')
+        return jobs
 
-    def _fmt_budget(self, item: dict) -> str:
-        job_type = str(item.get('jobType', item.get('type', ''))).lower()
-        if 'hourly' in job_type:
-            lo = item.get('hourlyBudgetMin', 0) or 0
-            hi = item.get('hourlyBudgetMax', 0) or 0
-            if lo and hi:
-                return f'${lo}-${hi}/hr'
-            return 'Hourly'
-        amount = 0
-        if isinstance(item.get('budget'), dict):
-            amount = item['budget'].get('amount') or item['budget'].get('min') or 0
-        elif isinstance(item.get('amount'), dict):
-            amount = item['amount'].get('amount') or 0
-        elif isinstance(item.get('fixedPriceAmount'), dict):
-            amount = item['fixedPriceAmount'].get('amount') or 0
-        return f'${int(amount):,}' if amount else 'Fixed price'
+    def _extract_budget(self, text: str) -> str:
+        hourly = re.search(r'\$[\d.]+\s*[-–]\s*\$[\d.]+\s*/hr', text, re.I)
+        if hourly:
+            return hourly.group()
+        fixed = re.search(r'\$[\d,]+(?:\s*[-–]\s*\$[\d,]+)?', text)
+        if fixed:
+            return fixed.group()
+        return 'Fixed price'
