@@ -195,15 +195,35 @@ class UpworkScraper:
         )
         logger.info(f'Buscando: {query}')
         await page.goto(url, wait_until='domcontentloaded')
-        await asyncio.sleep(4)
+        await asyncio.sleep(5)
 
         jobs = []
         try:
-            tiles = await page.query_selector_all(
-                '[data-test="job-tile-list"] section, '
-                'article[data-test="job-tile"], '
-                '[data-test="job-tile"]'
-            )
+            # Try selectors in order, use first that returns results
+            selector_candidates = [
+                '[data-test="job-tile-list"] section',
+                'article[data-test="job-tile"]',
+                '[data-test="job-tile"]',
+                'section[data-test="job-tile"]',
+                '.job-tile',
+                '[data-job-uid]',
+                'article',
+            ]
+            tiles = []
+            for sel in selector_candidates:
+                found = await page.query_selector_all(sel)
+                if found:
+                    logger.info(f'Selector "{sel}" → {len(found)} tiles')
+                    tiles = found
+                    break
+
+            if not tiles:
+                screenshot_path = f'/opt/upwork-bot/debug_search.png'
+                await page.screenshot(path=screenshot_path, full_page=False)
+                html_snippet = (await page.content())[:800]
+                logger.warning(f'0 tiles. Screenshot: {screenshot_path}')
+                logger.warning(f'HTML: {html_snippet}')
+
             logger.info(f'{len(tiles)} tiles para "{query}"')
 
             for tile in tiles[:15]:
