@@ -130,8 +130,18 @@ class UpworkScraper:
                 raw = json.load(f)
 
             # Cookie Editor exports as list; each cookie needs 'name', 'value', 'domain'
+            same_site_map = {
+                'no_restriction': 'None',
+                'lax': 'Lax',
+                'strict': 'Strict',
+                'none': 'None',
+                'unspecified': 'Lax',
+            }
+
             cookies = []
             for c in raw:
+                raw_ss = str(c.get('sameSite', 'Lax')).lower()
+                same_site = same_site_map.get(raw_ss, 'Lax')
                 cookie = {
                     'name': c['name'],
                     'value': c['value'],
@@ -139,7 +149,7 @@ class UpworkScraper:
                     'path': c.get('path', '/'),
                     'httpOnly': c.get('httpOnly', False),
                     'secure': c.get('secure', True),
-                    'sameSite': c.get('sameSite', 'None'),
+                    'sameSite': same_site,
                 }
                 if c.get('expirationDate'):
                     cookie['expires'] = int(c['expirationDate'])
