@@ -153,7 +153,7 @@ class UpworkScraper:
 
                     # Aplica filtros
                     if (job.get('client_rating', 0) >= float(
-                            __import__('os').environ.get('MIN_CLIENT_RATING', 4.4))
+                            __import__('os').environ.get('MIN_CLIENT_RATING', 4.0))
                         and job.get('applicants', 99) <= int(
                             __import__('os').environ.get('MAX_APPLICANTS', 15))
                         and job['score'] >= int(
