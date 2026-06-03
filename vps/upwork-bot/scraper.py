@@ -237,9 +237,12 @@ class UpworkScraper:
                     captured.append({'url': resp_url, 'data': data})
                     logger.info(f'API con jobs capturada: {resp_url}')
                 else:
+                    # Extract alias from GraphQL URL for easier identification
+                    alias_match = re.search(r'alias=([^&]+)', resp_url)
+                    label = alias_match.group(1) if alias_match else resp_url.split('/')[-1][:60]
                     top_keys = list(d.keys())[:8]
                     nested_keys = list(nested.keys())[:8] if nested else []
-                    logger.info(f'API JSON: {resp_url[:100]} — keys={top_keys} data.keys={nested_keys}')
+                    logger.info(f'API [{label}] keys={top_keys} data={nested_keys}')
             except Exception as e:
                 logger.info(f'API JSON (error parse) {resp_url[:80]}: {e}')
 
@@ -263,12 +266,28 @@ class UpworkScraper:
             page.remove_listener('response', on_response)
             return []
 
-        # Wait for async API calls to complete
+        # Wait for initial config API calls to settle
         try:
             await page.wait_for_load_state('networkidle', timeout=25000)
         except Exception:
             pass
-        await asyncio.sleep(3)
+
+        # Scroll to trigger lazy-loaded job feed component (Intersection Observer)
+        try:
+            await page.evaluate('window.scrollTo(0, 400)')
+            await asyncio.sleep(1)
+            await page.evaluate('window.scrollTo(0, 800)')
+        except Exception:
+            pass
+
+        # Job feed API fires after initial config calls — wait up to 20s
+        deadline = 20
+        for i in range(deadline):
+            if captured:
+                break
+            await asyncio.sleep(1)
+            if i % 5 == 4:
+                logger.info(f'Esperando job feed API... ({i+1}s)')
 
         page.remove_listener('response', on_response)
         logger.info(f'APIs JSON con jobs capturadas: {len(captured)}')
