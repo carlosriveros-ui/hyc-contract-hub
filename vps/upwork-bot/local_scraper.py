@@ -278,39 +278,35 @@ class UpworkScraper:
         return []
 
     async def _dom_scrape(self, page, seen_ids: set) -> list[dict]:
-        """Lee job cards directamente del HTML renderizado."""
-        selectors = [
-            '[data-test="job-tile"]',
-            '[data-test="UpCJobTile"]',
-            'article.job-tile',
-            '[class*="JobTile"]',
-            'section[data-id]',
-        ]
-        for sel in selectors:
-            try:
-                count = await page.locator(sel).count()
-                if count == 0:
-                    continue
-                logger.info(f'DOM: {count} elementos "{sel}"')
-                raw = await page.evaluate(f'''() => {{
-                    const tiles = document.querySelectorAll('{sel}');
-                    return Array.from(tiles).slice(0, 20).map(tile => {{
-                        const link = tile.querySelector('h2 a, [class*="title"] a, a[href*="/jobs/"], a[href*="~"]');
-                        const desc = tile.querySelector('[data-test="description"], [class*="description"], [class*="snippet"], p');
-                        const budget = tile.querySelector('[data-test="budget"], [class*="budget"], [class*="price"]');
-                        return {{
-                            title: link?.textContent?.trim() || tile.querySelector('h2,h3')?.textContent?.trim() || '',
-                            url: link ? (link.href || '') : '',
-                            description: (desc?.textContent?.trim() || '').slice(0, 500),
-                            budget: budget?.textContent?.trim() || '',
-                        }};
-                    }}).filter(j => j.title);
-                }}''')
-                if raw:
-                    return self._build_from_dom(raw, seen_ids)
-            except Exception as e:
-                logger.debug(f'DOM {sel}: {e}')
-        logger.warning('DOM: no se encontraron job tiles')
+        """Lee job links directamente del HTML renderizado."""
+        try:
+            raw = await page.evaluate('''() => {
+                // Buscar todos los links que son jobs de Upwork
+                const links = Array.from(document.querySelectorAll(
+                    'a[href*="/jobs/~"], a[href*="~0"], a[href*="~01"], a[href*="~02"]'
+                ));
+                const seen = new Set();
+                return links.map(a => {
+                    const url = a.href;
+                    if (seen.has(url)) return null;
+                    seen.add(url);
+                    // Buscar el contenedor del job card
+                    const card = a.closest('article, section, li, [class*="tile"], [class*="card"], [class*="job"]') || a.parentElement?.parentElement;
+                    const text = card ? card.innerText : a.innerText;
+                    return {
+                        title: a.innerText.trim(),
+                        url: url,
+                        description: text.slice(0, 500),
+                        budget: '',
+                    };
+                }).filter(j => j && j.title.length > 5);
+            }''')
+            if raw:
+                logger.info(f'DOM: {len(raw)} job links encontrados')
+                return self._build_from_dom(raw, seen_ids)
+        except Exception as e:
+            logger.debug(f'DOM scrape error: {e}')
+        logger.warning('DOM: no se encontraron job links')
         return []
 
     def _build_from_dom(self, raw_list: list, seen_ids: set) -> list[dict]:
