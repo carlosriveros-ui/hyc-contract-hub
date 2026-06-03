@@ -217,22 +217,31 @@ class UpworkScraper:
                 return
             try:
                 data = await response.json()
-                if not isinstance(data, dict):
+                if not isinstance(data, (dict, list)):
                     return
-                # Look for any response that contains job arrays
+                # Detect job arrays in various response shapes (REST + GraphQL)
+                d = data if isinstance(data, dict) else {}
+                nested = d.get('data', {}) or {}
                 has_jobs = (
-                    isinstance(data.get('results'), list)
-                    or isinstance(data.get('jobs'), list)
-                    or isinstance(data.get('data', {}).get('jobs'), list)
-                    or isinstance(data.get('data', {}).get('results'), list)
+                    isinstance(d.get('results'), list)
+                    or isinstance(d.get('jobs'), list)
+                    or isinstance(nested.get('jobs'), list)
+                    or isinstance(nested.get('results'), list)
+                    or isinstance(nested.get('bestMatches'), list)
+                    or isinstance(nested.get('search', {}).get('jobs', {}).get('edges'), list)
+                    or isinstance(nested.get('searchResults', {}).get('jobs', {}).get('edges'), list)
+                    or isinstance(nested.get('jobSearch', {}).get('results'), list)
+                    or isinstance(nested.get('freelancerBestMatches', {}).get('results'), list)
                 )
                 if has_jobs:
                     captured.append({'url': resp_url, 'data': data})
                     logger.info(f'API con jobs capturada: {resp_url}')
                 else:
-                    logger.debug(f'API JSON (sin jobs): {resp_url} — keys: {list(data.keys())[:6]}')
+                    top_keys = list(d.keys())[:8]
+                    nested_keys = list(nested.keys())[:8] if nested else []
+                    logger.info(f'API JSON: {resp_url[:100]} — keys={top_keys} data.keys={nested_keys}')
             except Exception as e:
-                logger.debug(f'Error leyendo resp JSON {resp_url}: {e}')
+                logger.info(f'API JSON (error parse) {resp_url[:80]}: {e}')
 
         page.on('response', on_response)
 
@@ -490,11 +499,24 @@ class UpworkScraper:
         return []
 
     def _parse_api_response(self, data: dict, seen_ids: set) -> list[dict]:
-        # Try various response structures
+        d = data if isinstance(data, dict) else {}
+        nested = d.get('data', {}) or {}
+
+        # GraphQL edge list → unwrap nodes
+        def unwrap_edges(obj):
+            edges = obj.get('edges', []) if isinstance(obj, dict) else []
+            return [e.get('node', e) for e in edges if isinstance(e, dict)]
+
         jobs_list = (
-            data.get('jobs', [])
-            or data.get('results', [])
-            or data.get('data', {}).get('jobs', [])
+            d.get('jobs')
+            or d.get('results')
+            or nested.get('jobs')
+            or nested.get('results')
+            or nested.get('bestMatches')
+            or unwrap_edges(nested.get('search', {}).get('jobs', {}))
+            or unwrap_edges(nested.get('searchResults', {}).get('jobs', {}))
+            or (nested.get('jobSearch', {}) or {}).get('results')
+            or (nested.get('freelancerBestMatches', {}) or {}).get('results')
             or []
         )
 
@@ -502,7 +524,7 @@ class UpworkScraper:
             jobs_list = data
 
         if not jobs_list:
-            logger.warning(f'No jobs en JSON. Keys top-level: {list(data.keys())[:10]}')
+            logger.warning(f'No jobs en JSON. Keys: {list(d.keys())[:10]} data.keys: {list(nested.keys())[:10]}')
             return []
 
         return self._build_jobs(jobs_list, seen_ids)
@@ -527,7 +549,14 @@ class UpworkScraper:
         result = []
         for item in jobs_list[:20]:
             try:
-                cipher = item.get('ciphertext', '') or ''
+                # ciphertext / id / uid cover REST and GraphQL field names
+                cipher = (
+                    item.get('ciphertext')
+                    or item.get('id')
+                    or item.get('uid')
+                    or ''
+                )
+                cipher = str(cipher)
                 job_id = cipher.lstrip('~') or hashlib.md5(
                     item.get('title', '').encode()
                 ).hexdigest()[:12]
@@ -536,9 +565,15 @@ class UpworkScraper:
                     continue
 
                 client = item.get('client', {}) or {}
-                rating = float(client.get('feedbackScore', 0) or 0)
+                # GraphQL may use 'totalFeedback' or 'score'
+                rating = float(
+                    client.get('feedbackScore')
+                    or client.get('totalFeedback')
+                    or client.get('score')
+                    or 0
+                )
 
-                proposals = item.get('proposalsTier', '') or ''
+                proposals = item.get('proposalsTier', '') or item.get('proposals', '') or ''
                 applicants = 5
                 if isinstance(proposals, str):
                     nums = re.findall(r'\d+', proposals)
@@ -547,15 +582,25 @@ class UpworkScraper:
                 elif isinstance(proposals, int):
                     applicants = proposals
 
+                # GraphQL may use 'jobUrl' or build from id
+                raw_url = item.get('jobUrl') or item.get('url') or ''
+                if raw_url and not raw_url.startswith('http'):
+                    raw_url = f'https://www.upwork.com{raw_url}'
+                if not raw_url:
+                    raw_url = f'https://www.upwork.com/jobs/{"~" + cipher if cipher else job_id}'
+
                 j = {
                     'id': job_id,
-                    'title': item.get('title', ''),
-                    'url': f'https://www.upwork.com/jobs/{cipher or "~" + job_id}',
-                    'description': item.get('snippet', item.get('description', ''))[:500],
+                    'title': item.get('title', '') or item.get('name', ''),
+                    'url': raw_url,
+                    'description': item.get('snippet', item.get('description', item.get('body', '')))[:500],
                     'budget': self._fmt_budget(item),
                     'client_rating': rating,
                     'applicants': applicants,
-                    'payment_verified': client.get('paymentVerificationStatus') == 1,
+                    'payment_verified': (
+                        client.get('paymentVerificationStatus') == 1
+                        or client.get('paymentVerified') is True
+                    ),
                 }
                 j['score'] = score_job(j)
 
