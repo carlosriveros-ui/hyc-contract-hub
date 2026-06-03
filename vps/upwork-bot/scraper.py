@@ -158,27 +158,14 @@ class UpworkScraper:
 
                 page = await context.new_page()
 
-                # Load authenticated page (no CF challenge here)
-                await page.goto(
-                    'https://www.upwork.com/nx/find-work/best-matches',
-                    wait_until='domcontentloaded', timeout=30000
-                )
-                title = await page.title()
-                cur = page.url
-                if 'login' in cur or 'blocked' in title.lower() or 'just a moment' in title.lower():
-                    logger.warning(f'Sesión inválida/bloqueada: {title}')
-                    return []
-
-                # Wait for initial config calls
-                try:
-                    await page.wait_for_load_state('networkidle', timeout=20000)
-                except Exception:
-                    pass
-                await asyncio.sleep(2)
-
-                logger.info('Página autenticada cargada, ejecutando eval GraphQL...')
-                jobs = await self._eval_job_feed(page, seen_ids)
-                all_jobs.extend(jobs)
+                # Strategy A: intercept the search page's own API response
+                # The page React app uses a properly-scoped token — capture its response
+                for query in SEARCH_QUERIES[:2]:
+                    found = await self._intercept_search_page(page, query, seen_ids)
+                    all_jobs.extend(found)
+                    if found:
+                        break
+                    await asyncio.sleep(3)
 
             except Exception as e:
                 logger.error(f'Playwright eval error: {e}')
@@ -186,6 +173,93 @@ class UpworkScraper:
                 await browser.close()
 
         return self._dedup(all_jobs)
+
+    async def _intercept_search_page(self, page, query: str, seen_ids: set) -> list[dict]:
+        """Load the job search page in headed mode and capture its own API response."""
+        q = urllib.parse.quote(query)
+        url = f'https://www.upwork.com/nx/jobs/search/?q={q}&sort=recency&per_page=20'
+        logger.info(f'Cargando search page (headed): {query}')
+
+        captured = []
+
+        async def on_response(response):
+            ct = response.headers.get('content-type', '')
+            if 'application/json' not in ct:
+                return
+            if 'upwork.com' not in response.url:
+                return
+            try:
+                data = await response.json()
+                if not isinstance(data, dict):
+                    return
+                d = data.get('data', {}) or {}
+                # Any response that has job-like arrays
+                candidates = [
+                    data.get('results'), data.get('jobs'),
+                    d.get('results'), d.get('jobs'),
+                    d.get('jobSearch', {}).get('results') if isinstance(d.get('jobSearch'), dict) else None,
+                ]
+                if any(isinstance(c, list) and len(c) > 0 for c in candidates):
+                    captured.append({'url': response.url, 'data': data})
+                    logger.info(f'Job API capturada: {response.url[:80]}')
+                else:
+                    alias = response.url.split('alias=')[-1].split('&')[0] if 'alias=' in response.url else ''
+                    if alias:
+                        logger.debug(f'API [{alias}] sin jobs: data.keys={list(d.keys())[:6]}')
+            except Exception:
+                pass
+
+        page.on('response', on_response)
+
+        try:
+            await page.goto(url, wait_until='domcontentloaded', timeout=35000)
+        except Exception as e:
+            logger.error(f'Error navegando a search: {e}')
+            page.remove_listener('response', on_response)
+            return []
+
+        title = await page.title()
+        cur = page.url
+
+        logger.info(f'Search page title="{title}" url={cur[:60]}')
+
+        if 'login' in cur or 'blocked' in title.lower():
+            logger.warning('Sesión inválida en search page')
+            page.remove_listener('response', on_response)
+            return []
+
+        if 'just a moment' in title.lower():
+            logger.info('CF challenge detectado — esperando resolución (headed)...')
+            try:
+                await page.wait_for_function(
+                    "document.title.toLowerCase().indexOf('just a moment') === -1",
+                    timeout=30000,
+                )
+                logger.info('CF challenge resuelto')
+            except Exception:
+                logger.warning('CF challenge no resuelto en 30s')
+                page.remove_listener('response', on_response)
+                return []
+
+        # Wait for React to fire its job search API call
+        try:
+            await page.wait_for_load_state('networkidle', timeout=25000)
+        except Exception:
+            pass
+        await asyncio.sleep(5)
+
+        page.remove_listener('response', on_response)
+        logger.info(f'APIs con jobs capturadas: {len(captured)}')
+
+        for item in captured:
+            try:
+                jobs = self._parse_api_response(item['data'], seen_ids)
+                if jobs:
+                    return self._dedup(jobs)
+            except Exception as e:
+                logger.debug(f'Parse error: {e}')
+
+        return []
 
     async def _eval_job_feed(self, page, seen_ids: set) -> list[dict]:
         """Capture auth headers from a real browser GraphQL call, then use them for job feed."""
