@@ -5,6 +5,11 @@ import hashlib
 import json
 import os
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
+try:
+    from playwright_stealth import stealth_async
+    HAS_STEALTH = True
+except ImportError:
+    HAS_STEALTH = False
 
 logger = logging.getLogger('upwork-scraper')
 
@@ -96,6 +101,9 @@ class UpworkScraper:
                     return []
 
                 page = await context.new_page()
+                if HAS_STEALTH:
+                    await stealth_async(page)
+                    logger.info('Stealth mode activado')
 
                 # Verify session is valid
                 session_ok = await self._verify_session(page)
@@ -195,7 +203,20 @@ class UpworkScraper:
         )
         logger.info(f'Buscando: {query}')
         await page.goto(url, wait_until='domcontentloaded')
-        await asyncio.sleep(5)
+
+        # Wait for Cloudflare challenge to resolve if present
+        title = await page.title()
+        if 'just a moment' in title.lower():
+            logger.info('Cloudflare challenge detectado, esperando hasta 20s...')
+            try:
+                await page.wait_for_function(
+                    "document.title.toLowerCase().indexOf('just a moment') === -1",
+                    timeout=20000,
+                )
+                logger.info('Challenge resuelto')
+            except Exception:
+                logger.warning('Challenge no resuelto a tiempo')
+        await asyncio.sleep(4)
 
         jobs = []
         try:
