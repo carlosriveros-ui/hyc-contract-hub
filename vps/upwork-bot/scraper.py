@@ -168,13 +168,16 @@ class UpworkScraper:
             )
             await asyncio.sleep(2)  # Esperar que Vue.js habilite el botón submit
 
-            # Submit — primero intenta locator, fallback a JS con optional chaining
+            # Submit — presionar Enter en el campo password (más confiable que click)
             try:
-                submit = page.locator('#login_control_continue')
-                await submit.wait_for(state='visible', timeout=8000)
-                await submit.click()
-            except PlaywrightTimeout:
-                logger.warning('Submit button timeout — intentando JS click')
+                pwd_field = page.locator('#login_password')
+                await pwd_field.focus(force=True)
+                await asyncio.sleep(0.3)
+                await page.keyboard.press('Enter')
+                logger.info('Enter presionado en campo password')
+            except Exception:
+                # Fallback: JS click en el botón
+                logger.warning('Enter fallido — intentando JS click en submit')
                 await page.evaluate(
                     "document.querySelector('#login_control_continue')?.click()"
                 )
