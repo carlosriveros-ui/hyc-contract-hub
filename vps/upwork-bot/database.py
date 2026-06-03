@@ -1,8 +1,9 @@
 import aiosqlite
 import json
+import os
 from datetime import datetime
 
-DB_PATH = '/opt/upwork-bot/jobs.db'
+DB_PATH = os.environ.get('DB_PATH', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jobs.db'))
 
 async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
