@@ -127,7 +127,32 @@ class UpworkScraper:
             await self._load_cookies(context)
             page = await context.new_page()
 
-            # Verificar / establecer sesion
+            # Interceptar desde el primer goto
+            captured = []
+            async def on_first_response(response):
+                ct = response.headers.get('content-type', '')
+                if 'application/json' not in ct or 'upwork.com' not in response.url:
+                    return
+                try:
+                    data = await response.json()
+                    if not isinstance(data, dict):
+                        return
+                    d = data.get('data', {}) or {}
+                    has_jobs = any([
+                        isinstance(data.get('results'), list),
+                        isinstance(data.get('jobs'), list),
+                        isinstance(d.get('results'), list),
+                        isinstance((d.get('jobSearch') or {}).get('results'), list),
+                        isinstance((d.get('freelancerBestMatches') or {}).get('results'), list),
+                        isinstance((d.get('recommendedJobs') or {}).get('results'), list),
+                    ])
+                    if has_jobs:
+                        captured.append(data)
+                        logger.info(f'API capturada: {response.url[:80]}')
+                except Exception:
+                    pass
+            page.on('response', on_first_response)
+
             await page.goto(
                 'https://www.upwork.com/nx/find-work/best-matches',
                 wait_until='domcontentloaded', timeout=30000,
@@ -135,39 +160,55 @@ class UpworkScraper:
             await asyncio.sleep(3)
 
             if 'login' in page.url or 'sign-in' in page.url:
+                page.remove_listener('response', on_first_response)
                 logger.info('Sesion expirada — esperando autenticacion manual...')
                 await page.goto('https://www.upwork.com/login', wait_until='domcontentloaded')
                 try:
                     await page.wait_for_url('**/find-work/**', timeout=300000)
                     logger.info('Autenticado!')
                     await self._save_cookies(context)
+                    # Re-attach listener y navegar de nuevo
+                    page.on('response', on_first_response)
+                    await page.goto('https://www.upwork.com/nx/find-work/best-matches',
+                                    wait_until='domcontentloaded', timeout=30000)
+                    await asyncio.sleep(3)
                 except Exception:
                     logger.error('Timeout esperando autenticacion (5 min)')
                     await browser.close()
                     return []
 
-            # Estrategia 1: interceptar API mientras navega find-work
-            for url in FIND_WORK_URLS:
-                jobs = await self._scrape_with_interception(page, url, seen_ids)
+            # Esperar a que React cargue los jobs
+            try:
+                await page.wait_for_load_state('networkidle', timeout=15000)
+            except Exception:
+                pass
+            await asyncio.sleep(3)
+            for _ in range(5):
+                await page.mouse.wheel(0, 400)
+                await asyncio.sleep(0.8)
+            await asyncio.sleep(5)
+            page.remove_listener('response', on_first_response)
+            logger.info(f'APIs interceptadas en best-matches: {len(captured)}')
+
+            # Usar APIs interceptadas
+            for data in captured:
+                jobs = self._parse(data, seen_ids)
                 for j in jobs:
                     if j['id'] not in {x['id'] for x in all_jobs}:
                         all_jobs.append(j)
-                if all_jobs:
-                    break
-                await asyncio.sleep(2)
 
-            # Estrategia 2: llamar GraphQL directamente desde el contexto del browser
+            # Estrategia 2: DOM scraping (jobs ya estan visibles en pantalla)
+            if not all_jobs:
+                logger.info('Leyendo jobs del DOM...')
+                jobs = await self._dom_scrape(page, seen_ids)
+                for j in jobs:
+                    if j['id'] not in {x['id'] for x in all_jobs}:
+                        all_jobs.append(j)
+
+            # Estrategia 3: GraphQL desde browser
             if not all_jobs:
                 logger.info('Intentando GraphQL desde sesion del browser...')
                 jobs = await self._graphql_from_browser(page, seen_ids)
-                for j in jobs:
-                    if j['id'] not in {x['id'] for x in all_jobs}:
-                        all_jobs.append(j)
-
-            # Estrategia 3: leer job cards del DOM
-            if not all_jobs:
-                logger.info('Intentando lectura de DOM...')
-                jobs = await self._dom_scrape(page, seen_ids)
                 for j in jobs:
                     if j['id'] not in {x['id'] for x in all_jobs}:
                         all_jobs.append(j)
@@ -281,22 +322,23 @@ class UpworkScraper:
         """Lee job links directamente del HTML renderizado."""
         try:
             raw = await page.evaluate('''() => {
-                // Buscar todos los links que son jobs de Upwork
-                const links = Array.from(document.querySelectorAll(
-                    'a[href*="/jobs/~"], a[href*="~0"], a[href*="~01"], a[href*="~02"]'
-                ));
+                // Buscar todos los links que apuntan a jobs de Upwork
+                const allLinks = Array.from(document.querySelectorAll('a[href]'));
+                const jobLinks = allLinks.filter(a => {
+                    const href = a.href || '';
+                    return href.includes('/jobs/') && !href.includes('/search') && !href.includes('saved') && a.innerText.trim().length > 5;
+                });
                 const seen = new Set();
-                return links.map(a => {
+                return jobLinks.map(a => {
                     const url = a.href;
                     if (seen.has(url)) return null;
                     seen.add(url);
-                    // Buscar el contenedor del job card
-                    const card = a.closest('article, section, li, [class*="tile"], [class*="card"], [class*="job"]') || a.parentElement?.parentElement;
+                    const card = a.closest('article, section, li, [class*="tile"], [class*="card"], [class*="job"], div[data-test]') || a.parentElement?.parentElement?.parentElement;
                     const text = card ? card.innerText : a.innerText;
                     return {
                         title: a.innerText.trim(),
                         url: url,
-                        description: text.slice(0, 500),
+                        description: text.replace(a.innerText, '').trim().slice(0, 500),
                         budget: '',
                     };
                 }).filter(j => j && j.title.length > 5);
