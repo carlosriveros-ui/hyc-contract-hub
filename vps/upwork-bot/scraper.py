@@ -110,17 +110,17 @@ class UpworkScraper:
                 if HAS_STEALTH:
                     await stealth_async(page)
 
-                # Verify session is valid
-                session_ok = await self._verify_session(page)
-                if not session_ok:
-                    logger.error('Sesión de cookies expirada o inválida')
-                    await browser.close()
-                    return []
+                # Scrape from authenticated find-work pages (no CF challenge, no Tor block)
+                # These pages already show relevant construction jobs based on user's profile
+                feed_pages = [
+                    'https://www.upwork.com/nx/find-work/best-matches',
+                    'https://www.upwork.com/nx/find-work/most-recent',
+                ]
 
-                for query in SEARCH_QUERIES[:2]:
-                    found = await self._search_jobs(page, query, seen_ids)
+                for feed_url in feed_pages:
+                    found = await self._scrape_feed_page(page, feed_url, seen_ids)
                     jobs.extend(found)
-                    await asyncio.sleep(3)
+                    await asyncio.sleep(2)
 
             except Exception as e:
                 logger.error(f'Error en scraping: {e}')
@@ -199,6 +199,62 @@ class UpworkScraper:
         except Exception as e:
             logger.error(f'Error verificando sesión: {e}')
             return False
+
+    async def _scrape_feed_page(self, page, url: str, seen_ids: set) -> list[dict]:
+        """Scrape jobs from authenticated find-work pages — no CF challenge, no Tor block."""
+        logger.info(f'Cargando feed: {url}')
+        try:
+            await page.goto(url, wait_until='domcontentloaded', timeout=30000)
+        except Exception as e:
+            logger.error(f'Error navegando a {url}: {e}')
+            return []
+
+        current_url = page.url
+        if 'login' in current_url or 'blocked' in (await page.title()).lower():
+            logger.warning(f'Página bloqueada o sesión expirada: {current_url}')
+            return []
+
+        await asyncio.sleep(4)
+
+        # Try __NEXT_DATA__ first
+        try:
+            next_data_str = await page.evaluate("""
+                () => {
+                    const el = document.getElementById('__NEXT_DATA__');
+                    return el ? el.textContent : null;
+                }
+            """)
+            if next_data_str:
+                data = json.loads(next_data_str)
+                jobs = self._parse_next_data(data, seen_ids)
+                if jobs:
+                    logger.info(f'{len(jobs)} jobs via __NEXT_DATA__ en {url}')
+                    return self._filter_jobs(jobs)
+        except Exception as e:
+            logger.debug(f'Error parseando __NEXT_DATA__: {e}')
+
+        # Fallback: DOM tile extraction
+        jobs = []
+        for sel in ['article[data-test="job-tile"]', '[data-test="job-tile"]', '[data-job-uid]']:
+            tiles = await page.query_selector_all(sel)
+            if tiles:
+                logger.info(f'{len(tiles)} tiles con selector "{sel}" en {url}')
+                for tile in tiles[:20]:
+                    try:
+                        job = await self._extract_tile(tile)
+                        if job and job['id'] not in seen_ids:
+                            job['score'] = score_job(job)
+                            jobs.append(job)
+                    except Exception as e:
+                        logger.debug(f'Error tile: {e}')
+                break
+
+        if not jobs:
+            title = await page.title()
+            html_preview = (await page.content())[:300]
+            logger.warning(f'0 jobs en {url}. Title: "{title}". HTML: {html_preview}')
+
+        return self._filter_jobs(jobs)
 
     async def _search_jobs(self, page, query: str, seen_ids: set) -> list[dict]:
         url = (
