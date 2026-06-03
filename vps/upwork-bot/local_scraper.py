@@ -101,16 +101,28 @@ class UpworkScraper:
                     '--no-sandbox',
                     '--disable-blink-features=AutomationControlled',
                     '--start-maximized',
+                    '--disable-infobars',
+                    '--disable-dev-shm-usage',
+                    '--window-size=1366,768',
                 ],
             )
             context = await browser.new_context(
-                viewport={'width': 1280, 'height': 720},
+                viewport={'width': 1366, 'height': 768},
                 user_agent=(
                     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                     'AppleWebKit/537.36 (KHTML, like Gecko) '
                     'Chrome/124.0.0.0 Safari/537.36'
                 ),
+                locale='es-CO',
+                timezone_id='America/Bogota',
             )
+            # Ocultar huellas de automatizacion
+            await context.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+                Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3,4,5]});
+                Object.defineProperty(navigator, 'languages', {get: () => ['es-CO','es','en-US','en']});
+                window.chrome = {runtime: {}};
+            """)
 
             await self._load_cookies(context)
             page = await context.new_page()
