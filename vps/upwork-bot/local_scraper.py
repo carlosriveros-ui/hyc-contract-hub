@@ -20,10 +20,9 @@ CONSTRUCTION_KEYWORDS = [
     'architect', 'engineer', 'schedule', 'procurement', 'subcontractor',
 ]
 
-SEARCH_QUERIES = [
-    'construction project manager',
-    'construction superintendent',
-    'site manager construction',
+FIND_WORK_URLS = [
+    'https://www.upwork.com/nx/find-work/best-matches',
+    'https://www.upwork.com/nx/find-work/most-recent',
 ]
 
 COOKIES_PATH = os.environ.get('COOKIES_PATH', 'cookies.json')
@@ -104,9 +103,9 @@ class UpworkScraper:
                     await browser.close()
                     return []
 
-            # Scrape with home IP — job search page works here!
-            for query in SEARCH_QUERIES:
-                jobs = await self._search(page, query, seen_ids)
+            # Scrape find-work pages — CF no bloquea estas en IP de casa
+            for url in FIND_WORK_URLS:
+                jobs = await self._scrape_feed(page, url, seen_ids)
                 for j in jobs:
                     if j['id'] not in {x['id'] for x in all_jobs}:
                         all_jobs.append(j)
@@ -122,12 +121,9 @@ class UpworkScraper:
         logger.info(f'Total jobs válidos: {len(all_jobs)}')
         return all_jobs
 
-    async def _search(self, page, query: str, seen_ids: set) -> list[dict]:
-        url = (
-            f'https://www.upwork.com/nx/jobs/search/'
-            f'?q={query.replace(" ", "+")}&sort=recency&per_page=20'
-        )
-        logger.info(f'Buscando: {query}')
+    async def _scrape_feed(self, page, url: str, seen_ids: set) -> list[dict]:
+        label = url.split('/')[-1]
+        logger.info(f'Cargando find-work/{label}...')
 
         captured = []
 
@@ -147,11 +143,12 @@ class UpworkScraper:
                     isinstance(d.get('jobs'), list),
                     isinstance((d.get('jobSearch') or {}).get('results'), list),
                     isinstance((d.get('freelancerBestMatches') or {}).get('results'), list),
+                    isinstance((d.get('recommendedJobs') or {}).get('results'), list),
                 ])
                 if has_jobs:
                     captured.append({'url': response.url, 'data': data})
-                    alias = response.url.split('alias=')[-1].split('&')[0] if 'alias=' in response.url else ''
-                    logger.info(f'✅ Job API: [{alias}]')
+                    alias = response.url.split('alias=')[-1].split('&')[0] if 'alias=' in response.url else label
+                    logger.info(f'Job API capturada: [{alias}]')
             except Exception:
                 pass
 
@@ -160,26 +157,34 @@ class UpworkScraper:
         try:
             await page.goto(url, wait_until='domcontentloaded', timeout=30000)
         except Exception as e:
-            logger.error(f'Error: {e}')
+            logger.error(f'Error navegando: {e}')
             page.remove_listener('response', on_response)
             return []
 
         title = await page.title()
-        logger.info(f'Search page: "{title}"')
+        logger.info(f'Pagina: "{title}"')
 
         if 'challenge' in title.lower() or 'just a moment' in title.lower():
-            logger.warning(f'CF challenge en IP local — {title}')
+            logger.warning(f'CF challenge — {title}')
             page.remove_listener('response', on_response)
             return []
 
+        # Esperar que React monte y dispare el job feed
         try:
-            await page.wait_for_load_state('networkidle', timeout=20000)
+            await page.wait_for_load_state('networkidle', timeout=15000)
         except Exception:
             pass
-        await asyncio.sleep(5)
+        await asyncio.sleep(3)
+
+        # Scroll para activar lazy load
+        for _ in range(3):
+            await page.mouse.wheel(0, 400)
+            await asyncio.sleep(1)
+
+        await asyncio.sleep(4)
 
         page.remove_listener('response', on_response)
-        logger.info(f'APIs capturadas: {len(captured)}')
+        logger.info(f'APIs capturadas en {label}: {len(captured)}')
 
         for item in captured:
             jobs = self._parse(item['data'], seen_ids)
