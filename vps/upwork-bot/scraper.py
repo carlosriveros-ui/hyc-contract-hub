@@ -76,8 +76,14 @@ class UpworkScraper:
     async def get_new_jobs(self, seen_ids: set) -> list[dict]:
         jobs = []
         async with async_playwright() as p:
+            use_tor = os.environ.get('USE_TOR', '').lower() in ('1', 'true', 'yes')
+            proxy = {'server': 'socks5://127.0.0.1:9050'} if use_tor else None
+            if use_tor:
+                logger.info('Usando Tor como proxy')
+
             browser = await p.chromium.launch(
                 headless=True,
+                proxy=proxy,
                 args=[
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
@@ -104,18 +110,17 @@ class UpworkScraper:
                 if HAS_STEALTH:
                     await stealth_async(page)
 
-                # Load find-work page — no Cloudflare challenge here
+                # Verify session is valid
                 session_ok = await self._verify_session(page)
                 if not session_ok:
                     logger.error('Sesión de cookies expirada o inválida')
                     await browser.close()
                     return []
 
-                # Search from within the page context (bypass CF by not navigating)
                 for query in SEARCH_QUERIES[:2]:
-                    found = await self._search_via_fetch(page, query, seen_ids)
+                    found = await self._search_jobs(page, query, seen_ids)
                     jobs.extend(found)
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(3)
 
             except Exception as e:
                 logger.error(f'Error en scraping: {e}')
@@ -194,6 +199,127 @@ class UpworkScraper:
         except Exception as e:
             logger.error(f'Error verificando sesión: {e}')
             return False
+
+    async def _search_jobs(self, page, query: str, seen_ids: set) -> list[dict]:
+        url = (
+            f'https://www.upwork.com/nx/jobs/search/'
+            f'?q={query.replace(" ", "+")}&sort=recency&per_page=20'
+        )
+        logger.info(f'Buscando: {query}')
+        await page.goto(url, wait_until='domcontentloaded')
+
+        title = await page.title()
+        if 'just a moment' in title.lower():
+            logger.warning(f'CF challenge en búsqueda — title: {title}')
+            try:
+                await page.wait_for_function(
+                    "document.title.toLowerCase().indexOf('just a moment') === -1",
+                    timeout=20000,
+                )
+            except Exception:
+                logger.warning('CF no resuelto')
+        await asyncio.sleep(4)
+
+        jobs = []
+        try:
+            # Extract __NEXT_DATA__ JSON (all job data is embedded here)
+            next_data_str = await page.evaluate("""
+                () => {
+                    const el = document.getElementById('__NEXT_DATA__');
+                    return el ? el.textContent : null;
+                }
+            """)
+
+            if next_data_str:
+                data = json.loads(next_data_str)
+                jobs = self._parse_next_data(data, seen_ids)
+                logger.info(f'{len(jobs)} jobs via __NEXT_DATA__ para "{query}"')
+                return jobs
+
+            # Fallback: query selector tiles
+            selector_candidates = [
+                'article[data-test="job-tile"]',
+                '[data-test="job-tile"]',
+                'section[data-test="job-tile"]',
+                '[data-job-uid]',
+            ]
+            for sel in selector_candidates:
+                tiles = await page.query_selector_all(sel)
+                if tiles:
+                    logger.info(f'Selector "{sel}" → {len(tiles)} tiles')
+                    for tile in tiles[:15]:
+                        try:
+                            job = await self._extract_tile(tile)
+                            if job and job['id'] not in seen_ids:
+                                job['score'] = score_job(job)
+                                jobs.append(job)
+                        except Exception as e:
+                            logger.debug(f'Error tile: {e}')
+                    break
+
+            if not jobs:
+                html_preview = (await page.content())[:400]
+                logger.warning(f'0 jobs. HTML: {html_preview}')
+
+        except Exception as e:
+            logger.error(f'Error en búsqueda: {e}')
+
+        return self._filter_jobs(jobs)
+
+    async def _extract_tile(self, tile) -> dict | None:
+        title_el = await tile.query_selector('h2 a, [data-test="job-title"] a, h3 a, a[href*="/jobs/"]')
+        if not title_el:
+            return None
+        title = (await title_el.inner_text()).strip()
+        href = await title_el.get_attribute('href')
+        url = f'https://www.upwork.com{href}' if href and href.startswith('/') else href
+        id_match = re.search(r'~([a-zA-Z0-9]+)', url or '')
+        job_id = id_match.group(1) if id_match else hashlib.md5((url or title).encode()).hexdigest()[:12]
+
+        desc_el = await tile.query_selector('[data-test="job-description-text"], .job-description')
+        description = (await desc_el.inner_text()).strip() if desc_el else ''
+        budget_el = await tile.query_selector('[data-test="budget"], [data-test="hourly-rate"]')
+        budget = (await budget_el.inner_text()).strip() if budget_el else 'No especificado'
+        rating_el = await tile.query_selector('[data-test="client-rating"] .sr-only')
+        rating = 0.0
+        if rating_el:
+            nums = re.findall(r'[\d.]+', await rating_el.inner_text())
+            rating = float(nums[0]) if nums else 0.0
+        applicants = 5
+        for el in await tile.query_selector_all('[data-test="proposals-tier"] li, [data-test="proposals"]'):
+            text = await el.inner_text()
+            if 'proposal' in text.lower():
+                nums = re.findall(r'\d+', text)
+                if nums:
+                    applicants = int(nums[0])
+                    break
+        pay_badges = await tile.query_selector_all('[data-test="payment-verified"]')
+        return {
+            'id': job_id,
+            'title': title,
+            'url': url,
+            'description': description[:500],
+            'budget': budget,
+            'client_rating': rating,
+            'applicants': applicants,
+            'payment_verified': len(pay_badges) > 0,
+        }
+
+    def _filter_jobs(self, jobs: list) -> list[dict]:
+        min_score = int(os.environ.get('MIN_SCORE', 20))
+        min_rating = float(os.environ.get('MIN_CLIENT_RATING', 4.0))
+        max_apps = int(os.environ.get('MAX_APPLICANTS', 15))
+        result = []
+        for job in jobs:
+            rating_ok = job.get('client_rating', 0) >= min_rating or job.get('client_rating', 0) == 0.0
+            apps_ok = job.get('applicants', 5) <= max_apps
+            score_ok = job.get('score', 0) >= min_score
+            if rating_ok and apps_ok and score_ok:
+                result.append(job)
+                logger.info(f'✅ Job válido (score={job["score"]}): {job["title"][:50]}')
+            else:
+                logger.debug(f'❌ Filtrado: score={job.get("score",0)}, r={job.get("client_rating",0)}, a={job.get("applicants",0)}')
+        return result
 
     async def _search_via_fetch(self, page, query: str, seen_ids: set) -> list[dict]:
         """
