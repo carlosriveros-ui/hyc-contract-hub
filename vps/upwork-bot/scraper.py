@@ -112,15 +112,14 @@ class UpworkScraper:
 
                 # Scrape from authenticated find-work pages (no CF challenge, no Tor block)
                 # These pages already show relevant construction jobs based on user's profile
-                feed_pages = [
+                # /find-work/best-matches works from VPS without CF challenge
+                # /most-recent gets CF-challenged — skip it
+                found = await self._scrape_feed_page(
+                    page,
                     'https://www.upwork.com/nx/find-work/best-matches',
-                    'https://www.upwork.com/nx/find-work/most-recent',
-                ]
-
-                for feed_url in feed_pages:
-                    found = await self._scrape_feed_page(page, feed_url, seen_ids)
-                    jobs.extend(found)
-                    await asyncio.sleep(2)
+                    seen_ids,
+                )
+                jobs.extend(found)
 
             except Exception as e:
                 logger.error(f'Error en scraping: {e}')
@@ -209,52 +208,61 @@ class UpworkScraper:
             logger.error(f'Error navegando a {url}: {e}')
             return []
 
+        title = await page.title()
         current_url = page.url
-        if 'login' in current_url or 'blocked' in (await page.title()).lower():
-            logger.warning(f'Página bloqueada o sesión expirada: {current_url}')
+        if 'login' in current_url or 'account-security' in current_url or 'blocked' in title.lower():
+            logger.warning(f'Bloqueado/sesión inválida. Title: "{title}" URL: {current_url}')
             return []
 
-        await asyncio.sleep(4)
+        if 'just a moment' in title.lower():
+            logger.warning(f'CF challenge en {url} — saltando')
+            return []
 
-        # Try __NEXT_DATA__ first
+        # Wait for React to render job tiles (SPA: content loads after initial HTML)
+        tile_selector = 'article[data-test="job-tile"], [data-test="job-tile"], [data-job-uid]'
         try:
-            next_data_str = await page.evaluate("""
-                () => {
-                    const el = document.getElementById('__NEXT_DATA__');
-                    return el ? el.textContent : null;
-                }
-            """)
+            await page.wait_for_selector(tile_selector, timeout=15000, state='visible')
+            logger.info('Tiles visibles en DOM')
+        except Exception:
+            logger.warning('Timeout esperando tiles — puede que no haya jobs o el render tardó')
+        await asyncio.sleep(2)
+
+        # Try __NEXT_DATA__ (SSR jobs embedded in page)
+        try:
+            next_data_str = await page.evaluate(
+                "() => { const el = document.getElementById('__NEXT_DATA__'); return el ? el.textContent : null; }"
+            )
             if next_data_str:
                 data = json.loads(next_data_str)
                 jobs = self._parse_next_data(data, seen_ids)
                 if jobs:
                     logger.info(f'{len(jobs)} jobs via __NEXT_DATA__ en {url}')
                     return self._filter_jobs(jobs)
+                logger.info('__NEXT_DATA__ presente pero sin jobs — parseando DOM')
         except Exception as e:
-            logger.debug(f'Error parseando __NEXT_DATA__: {e}')
+            logger.debug(f'Error __NEXT_DATA__: {e}')
 
-        # Fallback: DOM tile extraction
-        jobs = []
+        # DOM tile extraction
+        jobs_raw = []
         for sel in ['article[data-test="job-tile"]', '[data-test="job-tile"]', '[data-job-uid]']:
             tiles = await page.query_selector_all(sel)
             if tiles:
-                logger.info(f'{len(tiles)} tiles con selector "{sel}" en {url}')
-                for tile in tiles[:20]:
+                logger.info(f'{len(tiles)} tiles con selector "{sel}"')
+                for tile in tiles[:25]:
                     try:
                         job = await self._extract_tile(tile)
                         if job and job['id'] not in seen_ids:
                             job['score'] = score_job(job)
-                            jobs.append(job)
+                            jobs_raw.append(job)
                     except Exception as e:
                         logger.debug(f'Error tile: {e}')
                 break
 
-        if not jobs:
-            title = await page.title()
-            html_preview = (await page.content())[:300]
-            logger.warning(f'0 jobs en {url}. Title: "{title}". HTML: {html_preview}')
+        if not jobs_raw:
+            html_preview = (await page.content())[:400]
+            logger.warning(f'0 tiles en DOM. Title: "{title}". HTML: {html_preview}')
 
-        return self._filter_jobs(jobs)
+        return self._filter_jobs(jobs_raw)
 
     async def _search_jobs(self, page, query: str, seen_ids: set) -> list[dict]:
         url = (
