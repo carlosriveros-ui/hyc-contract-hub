@@ -24,19 +24,31 @@ jobs:
           port: 22
           script: |
             set -e
-            echo "==> Actualizando código del agente..."
-            cd /opt/hermes-agent
-            git fetch origin
-            git checkout claude/hermes-agent-vps-setup-XU4wa
-            git pull origin claude/hermes-agent-vps-setup-XU4wa
+            echo "==> Actualizando repositorio..."
+            if [ -d /tmp/hyc-repo ]; then
+              cd /tmp/hyc-repo
+              git fetch origin
+              git checkout claude/hermes-agent-vps-setup-XU4wa
+              git pull origin claude/hermes-agent-vps-setup-XU4wa
+            else
+              git clone -b claude/hermes-agent-vps-setup-XU4wa \
+                https://github.com/carlosriveros-ui/hyc-contract-hub /tmp/hyc-repo
+            fi
 
-            echo "==> Copiando archivos del agente..."
-            cp -r /opt/hermes-agent/vps/hermes-agent/* /opt/hermes-agent/
-            npm install --production
+            echo "==> Deployando upwork-bot..."
+            cp /tmp/hyc-repo/vps/upwork-bot/scraper.py /opt/upwork-bot/
+            cp /tmp/hyc-repo/vps/upwork-bot/bot.py /opt/upwork-bot/
+            cp /tmp/hyc-repo/vps/upwork-bot/proposals.py /opt/upwork-bot/
+            cp /tmp/hyc-repo/vps/upwork-bot/database.py /opt/upwork-bot/
+            cp /tmp/hyc-repo/vps/upwork-bot/requirements.txt /opt/upwork-bot/
+            /opt/upwork-bot/venv/bin/pip install -r /opt/upwork-bot/requirements.txt -q
+            systemctl restart upwork-bot
 
-            echo "==> Reiniciando servicio..."
-            systemctl restart hermes-agent
+            echo "==> Deployando hermes-agent..."
+            cp -r /tmp/hyc-repo/vps/hermes-agent/. /opt/hermes-agent/
+            cd /opt/hermes-agent && npm install --production 2>/dev/null || true
+            systemctl restart hermes-agent || true
+
             sleep 3
-            systemctl status hermes-agent --no-pager
-
+            systemctl status upwork-bot --no-pager | tail -5
             echo "==> Deploy completado!"
