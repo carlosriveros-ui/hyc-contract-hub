@@ -1,42 +1,102 @@
-/**
- * Tareas diarias automáticas del agente Hermes.
- * Se ejecutan cada dia a las 7am hora Colombia.
- */
+import { runSecopAgent } from '../agents/secop.js';
+import { runNewsAgent } from '../agents/news.js';
+import { runPricesAgent } from '../agents/prices.js';
+import { runCommercialAgent } from '../agents/commercial.js';
+import { runTalentAgent } from '../agents/talent.js';
 
+/**
+ * Tareas diarias del sistema HYC (monitoreo interno)
+ */
 export async function runDailyTasks(runAgent) {
   const tasks = [
     {
       name: 'Reporte de actividades pendientes',
       prompt: `Consulta la tabla "activities" y cuenta cuántas actividades tienen status "pendiente" y "en_proceso".
-      Si hay más de 10 pendientes, envía una notificación de warning por Telegram con el número exacto y una recomendación.
+      Si hay más de 10 pendientes, envía una notificación de warning por Telegram.
       Si todo está normal, envía un mensaje de info con el resumen.`,
     },
     {
       name: 'Alerta de materiales bajo stock',
-      prompt: `Consulta la tabla "materials". Identifica los materiales donde el campo "stock" sea menor o igual al campo "minStock".
-      Si hay materiales críticos, envía una notificación de warning por Telegram listando los materiales afectados con su stock actual y mínimo.`,
+      prompt: `Consulta la tabla "materials". Identifica los materiales donde "stock" sea menor o igual a "minStock".
+      Si hay materiales críticos, envía warning por Telegram listando los afectados con stock actual y mínimo.`,
     },
     {
       name: 'Verificación de salud del sistema',
-      prompt: `Verifica que la app en producción esté respondiendo correctamente.
-      Revisa también el endpoint /api/data?table=contracts para confirmar que la API responde.
-      Notifica por Telegram el estado del sistema (success si todo OK, error si hay problemas).`,
+      prompt: `Verifica que la app en producción esté respondiendo. Revisa /api/data?table=contracts.
+      Notifica por Telegram el estado: success si OK, error si hay problemas.`,
     },
     {
       name: 'Monitoreo de caja menor pendiente',
-      prompt: `Consulta la tabla "petty_cash" filtrando por status "pendiente".
-      Si hay más de 5 gastos pendientes de aprobación, envía un warning por Telegram al admin.`,
+      prompt: `Consulta "petty_cash" filtrando por status "pendiente".
+      Si hay más de 5 pendientes de aprobación, envía warning por Telegram al admin.`,
     },
   ];
 
   for (const task of tasks) {
     try {
-      console.log(`[daily] Ejecutando: ${task.name}`);
+      console.log(`[daily] ${task.name}`);
       await runAgent(task.prompt, { taskName: task.name, source: 'daily-cron' });
     } catch (err) {
       console.error(`[daily] Error en "${task.name}":`, err.message);
     }
   }
+}
 
-  console.log('[daily] Todas las tareas diarias completadas');
+/**
+ * Tareas de inteligencia de negocio (mañana, 7:30am COT)
+ */
+export async function runBusinessIntelligenceTasks(runAgent) {
+  console.log('[BI] Iniciando tareas de inteligencia de negocio...');
+
+  // Noticias del sector — diario
+  try {
+    console.log('[BI] Agente de noticias...');
+    await runNewsAgent(runAgent);
+  } catch (err) {
+    console.error('[BI] Error agente noticias:', err.message);
+  }
+
+  // Prospección comercial — diario (rota sector cada día)
+  try {
+    console.log('[BI] Agente comercial B2B...');
+    await runCommercialAgent(runAgent);
+  } catch (err) {
+    console.error('[BI] Error agente comercial:', err.message);
+  }
+}
+
+/**
+ * Tareas de licitaciones — Lunes, Miércoles y Viernes a las 8am COT
+ */
+export async function runSecopTasks(runAgent) {
+  console.log('[SECOP] Buscando licitaciones...');
+  try {
+    await runSecopAgent(runAgent);
+  } catch (err) {
+    console.error('[SECOP] Error:', err.message);
+  }
+}
+
+/**
+ * Precios de insumos — Lunes y Jueves
+ */
+export async function runPricesTasks(runAgent) {
+  console.log('[PRECIOS] Monitoreando precios de insumos...');
+  try {
+    await runPricesAgent(runAgent);
+  } catch (err) {
+    console.error('[PRECIOS] Error:', err.message);
+  }
+}
+
+/**
+ * Búsqueda de talento — Martes y Viernes
+ */
+export async function runTalentTasks(runAgent) {
+  console.log('[TALENTO] Buscando perfiles...');
+  try {
+    await runTalentAgent(runAgent);
+  } catch (err) {
+    console.error('[TALENTO] Error:', err.message);
+  }
 }
