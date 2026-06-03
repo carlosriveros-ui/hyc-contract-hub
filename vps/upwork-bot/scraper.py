@@ -2,6 +2,7 @@ import asyncio
 import logging
 import re
 import hashlib
+import json
 import os
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
 
@@ -20,6 +21,8 @@ SEARCH_QUERIES = [
     'site manager construction',
     'construction superintendent',
 ]
+
+COOKIES_PATH = os.environ.get('COOKIES_PATH', '/opt/upwork-bot/cookies.json')
 
 
 def score_job(job: dict) -> int:
@@ -84,17 +87,28 @@ class UpworkScraper:
                     '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
                 ),
             )
-            page = await context.new_page()
 
             try:
-                logged_in = await self._login(page)
-                if not logged_in:
-                    logger.warning('Login fallido — buscando sin autenticación')
+                cookies_loaded = await self._load_cookies(context)
+                if not cookies_loaded:
+                    logger.error('No se pudo cargar cookies.json — abortando')
+                    await browser.close()
+                    return []
+
+                page = await context.new_page()
+
+                # Verify session is valid
+                session_ok = await self._verify_session(page)
+                if not session_ok:
+                    logger.error('Sesión de cookies expirada o inválida')
+                    await browser.close()
+                    return []
 
                 for query in SEARCH_QUERIES[:2]:
                     found = await self._search_jobs(page, query, seen_ids)
                     jobs.extend(found)
                     await asyncio.sleep(3)
+
             except Exception as e:
                 logger.error(f'Error en scraping: {e}')
             finally:
@@ -110,68 +124,58 @@ class UpworkScraper:
         logger.info(f'Total jobs válidos: {len(unique)}')
         return unique
 
-    async def _login(self, page) -> bool:
-        logger.info('Iniciando sesión en Upwork...')
+    async def _load_cookies(self, context) -> bool:
+        try:
+            with open(COOKIES_PATH) as f:
+                raw = json.load(f)
+
+            # Cookie Editor exports as list; each cookie needs 'name', 'value', 'domain'
+            cookies = []
+            for c in raw:
+                cookie = {
+                    'name': c['name'],
+                    'value': c['value'],
+                    'domain': c.get('domain', '.upwork.com'),
+                    'path': c.get('path', '/'),
+                    'httpOnly': c.get('httpOnly', False),
+                    'secure': c.get('secure', True),
+                    'sameSite': c.get('sameSite', 'None'),
+                }
+                if c.get('expirationDate'):
+                    cookie['expires'] = int(c['expirationDate'])
+                cookies.append(cookie)
+
+            await context.add_cookies(cookies)
+            logger.info(f'Cookies cargadas: {len(cookies)} cookies de {COOKIES_PATH}')
+            return True
+
+        except FileNotFoundError:
+            logger.error(f'No se encontró {COOKIES_PATH} — exporta cookies de tu browser')
+            return False
+        except Exception as e:
+            logger.error(f'Error cargando cookies: {e}')
+            return False
+
+    async def _verify_session(self, page) -> bool:
+        logger.info('Verificando sesión con cookies...')
         try:
             await page.goto(
-                'https://www.upwork.com/ab/account-security/login',
+                'https://www.upwork.com/nx/find-work/best-matches',
                 wait_until='domcontentloaded',
                 timeout=30000,
             )
-            await asyncio.sleep(4)
+            await asyncio.sleep(3)
 
-            # Cerrar diálogos de cookies o modales
-            for sel in [
-                '[data-qa="uc-accept-all-button"]',
-                '#onetrust-accept-btn-handler',
-                'button:has-text("Accept All")',
-            ]:
-                try:
-                    btn = page.locator(sel)
-                    if await btn.count() > 0 and await btn.is_visible():
-                        await btn.click()
-                        await asyncio.sleep(1)
-                        break
-                except Exception:
-                    pass
-
-            await page.keyboard.press('Escape')
-            await asyncio.sleep(0.5)
-
-            # Email
-            username_input = page.locator('#login_username')
-            await username_input.wait_for(state='visible', timeout=15000)
-            await username_input.click()
-            await asyncio.sleep(0.3)
-            await username_input.fill(self.email)
-            await asyncio.sleep(0.5)
-
-            # Click continue — Playwright locator (funciona, el elemento existe en DOM)
-            await page.locator('#login_password_continue').click()
-            await asyncio.sleep(5)
-
-            # Password — focus via JS (campo hidden) y tipear con keyboard
-            # keyboard.type() dispara keydown/keypress/input/keyup → Vue.js reactivity ✓
-            await page.evaluate("document.querySelector('#login_password').focus()")
-            await asyncio.sleep(0.5)
-            await page.keyboard.type(self.password, delay=50)
-            await asyncio.sleep(1)
-
-            # Submit — Enter desde el teclado
-            await page.keyboard.press('Enter')
-            logger.info('Password tipeado y Enter presionado')
-
-            try:
-                await page.wait_for_url('**/find-work/**', timeout=25000)
-                logger.info('Login exitoso')
-                return True
-            except PlaywrightTimeout:
-                current_url = page.url
-                logger.warning(f'Login timeout — URL actual: {current_url[:80]}')
+            current_url = page.url
+            if 'login' in current_url or 'account-security' in current_url:
+                logger.warning(f'Redirigido al login — URL: {current_url}')
                 return False
 
+            logger.info(f'Sesión válida — URL: {current_url[:80]}')
+            return True
+
         except Exception as e:
-            logger.error(f'Error en login: {e}')
+            logger.error(f'Error verificando sesión: {e}')
             return False
 
     async def _search_jobs(self, page, query: str, seen_ids: set) -> list[dict]:
@@ -265,7 +269,6 @@ class UpworkScraper:
             nums = re.findall(r'[\d.]+', await rating_el.inner_text())
             rating = float(nums[0]) if nums else 0.0
 
-        # Default bajo para pasar el filtro cuando no está disponible
         applicants = 5
         apps_els = await tile.query_selector_all(
             '[data-test="proposals-tier"] li, [data-test="proposals"]'
