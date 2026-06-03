@@ -146,11 +146,12 @@ class UpworkScraper:
             await username_input.fill(self.email)
             await asyncio.sleep(0.5)
 
-            # Click continue via JS (más confiable que Playwright click en Vue.js)
-            await page.evaluate("document.querySelector('#login_password_continue').click()")
+            # Click continue — Playwright locator (funciona, el elemento existe en DOM)
+            await page.locator('#login_password_continue').click()
             await asyncio.sleep(5)
 
-            # Password — usar JS para disparar eventos Vue.js correctamente
+            # Password — usar JS nativo para disparar Vue.js reactivity
+            # (fill() normal no activa los watchers de Vue, el botón queda disabled)
             await page.evaluate(
                 """(pwd) => {
                     const input = document.querySelector('#login_password');
@@ -159,16 +160,24 @@ class UpworkScraper:
                         window.HTMLInputElement.prototype, 'value'
                     ).set;
                     setter.call(input, pwd);
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                    input.dispatchEvent(new Event('change', { bubbles: true }));
-                    input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+                    ['input', 'change', 'keyup'].forEach(ev =>
+                        input.dispatchEvent(new Event(ev, { bubbles: true }))
+                    );
                 }""",
                 self.password
             )
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)  # Esperar que Vue.js habilite el botón submit
 
-            # Submit via JS
-            await page.evaluate("document.querySelector('#login_control_continue').click()")
+            # Submit — primero intenta locator, fallback a JS con optional chaining
+            try:
+                submit = page.locator('#login_control_continue')
+                await submit.wait_for(state='visible', timeout=8000)
+                await submit.click()
+            except PlaywrightTimeout:
+                logger.warning('Submit button timeout — intentando JS click')
+                await page.evaluate(
+                    "document.querySelector('#login_control_continue')?.click()"
+                )
 
             try:
                 await page.wait_for_url('**/find-work/**', timeout=25000)
