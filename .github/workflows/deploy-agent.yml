@@ -1,0 +1,42 @@
+name: Deploy Hermes Agent to VPS
+
+on:
+  push:
+    branches: [main, claude/hermes-agent-vps-setup-XU4wa]
+    paths:
+      - 'vps/**'
+
+jobs:
+  deploy:
+    name: Deploy to Hostinger VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            echo "==> Actualizando código del agente..."
+            cd /opt/hermes-agent
+            git fetch origin
+            git checkout claude/hermes-agent-vps-setup-XU4wa
+            git pull origin claude/hermes-agent-vps-setup-XU4wa
+
+            echo "==> Copiando archivos del agente..."
+            cp -r /opt/hermes-agent/vps/hermes-agent/* /opt/hermes-agent/
+            npm install --production
+
+            echo "==> Reiniciando servicio..."
+            systemctl restart hermes-agent
+            sleep 3
+            systemctl status hermes-agent --no-pager
+
+            echo "==> Deploy completado!"

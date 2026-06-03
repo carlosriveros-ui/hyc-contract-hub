@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  hermes-agent:
+    build:
+      context: ./hermes-agent
+      dockerfile: Dockerfile
+    container_name: hermes-agent
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./hermes-agent/.env
+    volumes:
+      - agent-logs:/app/logs
+    networks:
+      - hermes-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Nginx reverse proxy — expone el agente con HTTPS
+  nginx:
+    image: nginx:alpine
+    container_name: hermes-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - hermes-agent
+    networks:
+      - hermes-net
+
+volumes:
+  agent-logs:
+
+networks:
+  hermes-net:
+    driver: bridge
