@@ -158,10 +158,13 @@ class UpworkScraper:
 
                 page = await context.new_page()
 
-                # Strategy A: intercept the search page's own API response
-                # The page React app uses a properly-scoped token — capture its response
-                for query in SEARCH_QUERIES[:2]:
-                    found = await self._intercept_search_page(page, query, seen_ids)
+                # Try authenticated find-work pages (no CF challenge on VPS)
+                # Simulate user interaction to trigger lazy-loaded job feed component
+                for feed_url in [
+                    'https://www.upwork.com/nx/find-work/most-recent',
+                    'https://www.upwork.com/nx/find-work/best-matches',
+                ]:
+                    found = await self._intercept_feed_page(page, feed_url, seen_ids)
                     all_jobs.extend(found)
                     if found:
                         break
@@ -173,6 +176,112 @@ class UpworkScraper:
                 await browser.close()
 
         return self._dedup(all_jobs)
+
+    async def _intercept_feed_page(self, page, url: str, seen_ids: set) -> list[dict]:
+        """Load authenticated find-work feed page and capture job API response."""
+        logger.info(f'Feed page: {url}')
+        captured = []
+
+        async def on_response(response):
+            ct = response.headers.get('content-type', '')
+            if 'application/json' not in ct:
+                return
+            if 'upwork.com' not in response.url:
+                return
+            try:
+                data = await response.json()
+                if not isinstance(data, dict):
+                    return
+                d = data.get('data', {}) or {}
+                has_jobs = any([
+                    isinstance(data.get('results'), list),
+                    isinstance(data.get('jobs'), list),
+                    isinstance(d.get('results'), list),
+                    isinstance(d.get('jobs'), list),
+                    isinstance((d.get('jobSearch') or {}).get('results'), list),
+                    isinstance((d.get('freelancerBestMatches') or {}).get('results'), list),
+                    isinstance((d.get('mostRecentJobs') or {}).get('results'), list),
+                ])
+                alias = response.url.split('alias=')[-1].split('&')[0] if 'alias=' in response.url else ''
+                if has_jobs:
+                    captured.append({'url': response.url, 'data': data})
+                    logger.info(f'✅ Job API: [{alias}] {response.url[:70]}')
+                elif alias:
+                    logger.info(f'API [{alias}] data.keys={list(d.keys())[:6]}')
+            except Exception:
+                pass
+
+        page.on('response', on_response)
+
+        try:
+            await page.goto(url, wait_until='domcontentloaded', timeout=30000)
+        except Exception as e:
+            logger.error(f'Goto error: {e}')
+            page.remove_listener('response', on_response)
+            return []
+
+        title = await page.title()
+        cur = page.url
+        logger.info(f'Feed title="{title}" url={cur[:60]}')
+
+        if 'login' in cur or 'blocked' in title.lower():
+            logger.warning('Sesión inválida')
+            page.remove_listener('response', on_response)
+            return []
+
+        if 'challenge' in title.lower() or 'just a moment' in title.lower():
+            logger.warning(f'CF challenge en feed page: {title}')
+            page.remove_listener('response', on_response)
+            return []
+
+        # Wait for initial render
+        try:
+            await page.wait_for_load_state('networkidle', timeout=20000)
+        except Exception:
+            pass
+        await asyncio.sleep(2)
+
+        if captured:
+            logger.info(f'Jobs capturados antes de interacción: {len(captured)}')
+        else:
+            # Simulate user: move mouse and scroll slowly to trigger Intersection Observer
+            logger.info('Simulando interacción de usuario...')
+            try:
+                await page.mouse.move(683, 200)
+                await asyncio.sleep(0.3)
+                await page.mouse.move(683, 400)
+                await asyncio.sleep(0.5)
+                await page.mouse.wheel(0, 300)
+                await asyncio.sleep(1)
+                await page.mouse.wheel(0, 500)
+                await asyncio.sleep(1)
+                await page.mouse.wheel(0, 800)
+                await asyncio.sleep(2)
+                await page.mouse.move(683, 600)
+                await asyncio.sleep(1)
+            except Exception as e:
+                logger.debug(f'Mouse simulation error: {e}')
+
+            # Wait for any API calls triggered by interaction
+            try:
+                await page.wait_for_load_state('networkidle', timeout=10000)
+            except Exception:
+                pass
+            await asyncio.sleep(3)
+
+        page.remove_listener('response', on_response)
+        logger.info(f'APIs con jobs capturadas: {len(captured)}')
+
+        for item in captured:
+            try:
+                jobs = self._parse_api_response(item['data'], seen_ids)
+                if jobs:
+                    return self._dedup(jobs)
+                d = item['data'].get('data', {}) or {}
+                logger.info(f'API sin jobs parseables. data.keys={list(d.keys())[:10]}')
+            except Exception as e:
+                logger.debug(f'Parse error: {e}')
+        return []
 
     async def _intercept_search_page(self, page, query: str, seen_ids: set) -> list[dict]:
         """Load the job search page in headed mode and capture its own API response."""
