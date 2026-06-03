@@ -141,11 +141,13 @@ class UpworkScraper:
     async def _playwright_eval_search(self, seen_ids: set) -> list[dict]:
         all_jobs = []
         async with async_playwright() as p:
+            has_display = bool(os.environ.get('DISPLAY'))
             browser = await p.chromium.launch(
-                headless=True,
+                headless=not has_display,
                 args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
                       '--disable-blink-features=AutomationControlled'],
             )
+            logger.info(f'Chromium modo: {"headed (DISPLAY={})".format(os.environ.get("DISPLAY")) if has_display else "headless"}')
             context = await browser.new_context(
                 viewport={'width': 1366, 'height': 768},
                 user_agent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
