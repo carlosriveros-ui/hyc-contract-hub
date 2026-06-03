@@ -25,6 +25,42 @@ FIND_WORK_URLS = [
     'https://www.upwork.com/nx/find-work/most-recent',
 ]
 
+GRAPHQL_QUERIES = [
+    ('freelancerBestMatches', '''
+        query { freelancerBestMatches(pagination: {number: 0, count: 20}) {
+            results {
+                id title snippet type jobType
+                hourlyBudgetMin hourlyBudgetMax
+                amount { amount }
+                client { totalFeedback feedbackScore paymentVerificationStatus }
+                proposalsTier jobUrl
+            }
+        }}
+    '''),
+    ('jobSearch_construction', '''
+        query { jobSearch(query: {q: "construction project manager"}, pagination: {number: 0, count: 20}) {
+            results {
+                id title snippet type jobType
+                hourlyBudgetMin hourlyBudgetMax
+                amount { amount }
+                client { totalFeedback feedbackScore paymentVerificationStatus }
+                proposalsTier jobUrl
+            }
+        }}
+    '''),
+    ('jobSearch_superintendent', '''
+        query { jobSearch(query: {q: "construction superintendent"}, pagination: {number: 0, count: 20}) {
+            results {
+                id title snippet type jobType
+                hourlyBudgetMin hourlyBudgetMax
+                amount { amount }
+                client { totalFeedback feedbackScore paymentVerificationStatus }
+                proposalsTier jobUrl
+            }
+        }}
+    '''),
+]
+
 COOKIES_PATH = os.environ.get('COOKIES_PATH', 'cookies.json')
 
 
@@ -54,8 +90,6 @@ class UpworkScraper:
     def __init__(self, email: str, password: str):
         self.email = email
         self.password = password
-        self._browser = None
-        self._context = None
 
     async def get_new_jobs(self, seen_ids: set) -> list[dict]:
         all_jobs = []
@@ -78,53 +112,62 @@ class UpworkScraper:
                 ),
             )
 
-            # Load saved cookies
             await self._load_cookies(context)
-
             page = await context.new_page()
 
-            # Check session
+            # Verificar / establecer sesion
             await page.goto(
                 'https://www.upwork.com/nx/find-work/best-matches',
                 wait_until='domcontentloaded', timeout=30000,
             )
             await asyncio.sleep(3)
 
-            # If redirected to login, wait for user to authenticate
             if 'login' in page.url or 'sign-in' in page.url:
-                logger.info('Sesión expirada — esperando autenticación manual...')
+                logger.info('Sesion expirada — esperando autenticacion manual...')
                 await page.goto('https://www.upwork.com/login', wait_until='domcontentloaded')
                 try:
                     await page.wait_for_url('**/find-work/**', timeout=300000)
-                    logger.info('✅ Autenticado!')
+                    logger.info('Autenticado!')
                     await self._save_cookies(context)
                 except Exception:
-                    logger.error('Timeout esperando autenticación (5 min)')
+                    logger.error('Timeout esperando autenticacion (5 min)')
                     await browser.close()
                     return []
 
-            # Scrape find-work pages — CF no bloquea estas en IP de casa
+            # Estrategia 1: interceptar API mientras navega find-work
             for url in FIND_WORK_URLS:
-                jobs = await self._scrape_feed(page, url, seen_ids)
+                jobs = await self._scrape_with_interception(page, url, seen_ids)
                 for j in jobs:
                     if j['id'] not in {x['id'] for x in all_jobs}:
                         all_jobs.append(j)
-                await asyncio.sleep(3)
+                if all_jobs:
+                    break
+                await asyncio.sleep(2)
 
-            # Minimize instead of close so user can see it
-            try:
-                await page.evaluate('window.blur()')
-            except Exception:
-                pass
+            # Estrategia 2: llamar GraphQL directamente desde el contexto del browser
+            if not all_jobs:
+                logger.info('Intentando GraphQL desde sesion del browser...')
+                jobs = await self._graphql_from_browser(page, seen_ids)
+                for j in jobs:
+                    if j['id'] not in {x['id'] for x in all_jobs}:
+                        all_jobs.append(j)
+
+            # Estrategia 3: leer job cards del DOM
+            if not all_jobs:
+                logger.info('Intentando lectura de DOM...')
+                jobs = await self._dom_scrape(page, seen_ids)
+                for j in jobs:
+                    if j['id'] not in {x['id'] for x in all_jobs}:
+                        all_jobs.append(j)
+
             await browser.close()
 
-        logger.info(f'Total jobs válidos: {len(all_jobs)}')
+        logger.info(f'Total jobs validos: {len(all_jobs)}')
         return all_jobs
 
-    async def _scrape_feed(self, page, url: str, seen_ids: set) -> list[dict]:
+    async def _scrape_with_interception(self, page, url: str, seen_ids: set) -> list[dict]:
         label = url.split('/')[-1]
         logger.info(f'Cargando find-work/{label}...')
-
         captured = []
 
         async def on_response(response):
@@ -146,51 +189,147 @@ class UpworkScraper:
                     isinstance((d.get('recommendedJobs') or {}).get('results'), list),
                 ])
                 if has_jobs:
-                    captured.append({'url': response.url, 'data': data})
-                    alias = response.url.split('alias=')[-1].split('&')[0] if 'alias=' in response.url else label
-                    logger.info(f'Job API capturada: [{alias}]')
+                    captured.append(data)
+                    logger.info(f'API capturada: {response.url[:80]}')
             except Exception:
                 pass
 
         page.on('response', on_response)
-
         try:
             await page.goto(url, wait_until='domcontentloaded', timeout=30000)
         except Exception as e:
-            logger.error(f'Error navegando: {e}')
+            logger.error(f'Error: {e}')
             page.remove_listener('response', on_response)
             return []
 
         title = await page.title()
-        logger.info(f'Pagina: "{title}"')
-
-        if 'challenge' in title.lower() or 'just a moment' in title.lower():
-            logger.warning(f'CF challenge — {title}')
+        if 'challenge' in title.lower():
             page.remove_listener('response', on_response)
             return []
 
-        # Esperar que React monte y dispare el job feed
         try:
             await page.wait_for_load_state('networkidle', timeout=15000)
         except Exception:
             pass
         await asyncio.sleep(3)
-
-        # Scroll para activar lazy load
-        for _ in range(3):
+        for _ in range(4):
             await page.mouse.wheel(0, 400)
-            await asyncio.sleep(1)
-
+            await asyncio.sleep(0.8)
         await asyncio.sleep(4)
 
         page.remove_listener('response', on_response)
-        logger.info(f'APIs capturadas en {label}: {len(captured)}')
+        logger.info(f'APIs interceptadas en {label}: {len(captured)}')
 
-        for item in captured:
-            jobs = self._parse(item['data'], seen_ids)
+        for data in captured:
+            jobs = self._parse(data, seen_ids)
             if jobs:
                 return jobs
         return []
+
+    async def _graphql_from_browser(self, page, seen_ids: set) -> list[dict]:
+        """Llama la API de Upwork desde el contexto real del browser (cookies incluidas)."""
+        for name, query in GRAPHQL_QUERIES:
+            try:
+                data = await page.evaluate(f'''async () => {{
+                    const r = await fetch('/api/graphql/v1', {{
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: {{
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json, text/plain, */*',
+                        }},
+                        body: JSON.stringify({{ query: {json.dumps(query)} }})
+                    }});
+                    if (!r.ok) return {{ error: r.status }};
+                    return r.json();
+                }}''')
+
+                if not isinstance(data, dict) or data.get('error'):
+                    logger.debug(f'GraphQL {name}: error {data}')
+                    continue
+
+                d = data.get('data', {}) or {}
+                results = (
+                    (d.get('freelancerBestMatches') or {}).get('results') or
+                    (d.get('jobSearch') or {}).get('results') or
+                    []
+                )
+                if results:
+                    logger.info(f'GraphQL {name}: {len(results)} jobs')
+                    return self._build(results, seen_ids)
+                else:
+                    logger.info(f'GraphQL {name}: 0 results. keys={list(d.keys())}')
+
+            except Exception as e:
+                logger.debug(f'GraphQL {name} exception: {e}')
+        return []
+
+    async def _dom_scrape(self, page, seen_ids: set) -> list[dict]:
+        """Lee job cards directamente del HTML renderizado."""
+        selectors = [
+            '[data-test="job-tile"]',
+            '[data-test="UpCJobTile"]',
+            'article.job-tile',
+            '[class*="JobTile"]',
+            'section[data-id]',
+        ]
+        for sel in selectors:
+            try:
+                count = await page.locator(sel).count()
+                if count == 0:
+                    continue
+                logger.info(f'DOM: {count} elementos "{sel}"')
+                raw = await page.evaluate(f'''() => {{
+                    const tiles = document.querySelectorAll('{sel}');
+                    return Array.from(tiles).slice(0, 20).map(tile => {{
+                        const link = tile.querySelector('h2 a, [class*="title"] a, a[href*="/jobs/"], a[href*="~"]');
+                        const desc = tile.querySelector('[data-test="description"], [class*="description"], [class*="snippet"], p');
+                        const budget = tile.querySelector('[data-test="budget"], [class*="budget"], [class*="price"]');
+                        return {{
+                            title: link?.textContent?.trim() || tile.querySelector('h2,h3')?.textContent?.trim() || '',
+                            url: link ? (link.href || '') : '',
+                            description: (desc?.textContent?.trim() || '').slice(0, 500),
+                            budget: budget?.textContent?.trim() || '',
+                        }};
+                    }}).filter(j => j.title);
+                }}''')
+                if raw:
+                    return self._build_from_dom(raw, seen_ids)
+            except Exception as e:
+                logger.debug(f'DOM {sel}: {e}')
+        logger.warning('DOM: no se encontraron job tiles')
+        return []
+
+    def _build_from_dom(self, raw_list: list, seen_ids: set) -> list[dict]:
+        min_score = int(os.environ.get('MIN_SCORE', 12))
+        result = []
+        for item in raw_list:
+            try:
+                url = item.get('url', '')
+                cipher = ''
+                if '~' in url:
+                    cipher = url.split('~')[-1].split('?')[0].split('/')[0]
+                job_id = cipher or hashlib.md5(item.get('title', '').encode()).hexdigest()[:12]
+                if not job_id or job_id in seen_ids:
+                    continue
+                j = {
+                    'id': job_id,
+                    'title': item.get('title', ''),
+                    'url': url if url.startswith('http') else f'https://www.upwork.com{url}',
+                    'description': item.get('description', ''),
+                    'budget': item.get('budget', ''),
+                    'client_rating': 0,
+                    'applicants': 5,
+                    'payment_verified': False,
+                }
+                j['score'] = score_job(j)
+                if j['score'] >= min_score:
+                    result.append(j)
+                    logger.info(f'score={j["score"]}: {j["title"][:60]}')
+            except Exception as e:
+                logger.debug(f'DOM build error: {e}')
+        return result
 
     def _parse(self, data: dict, seen_ids: set) -> list[dict]:
         d = data if isinstance(data, dict) else {}
@@ -210,7 +349,6 @@ class UpworkScraper:
         if not jobs_list and isinstance(data, list):
             jobs_list = data
         if not jobs_list:
-            logger.warning(f'No jobs. keys={list(d.keys())[:8]}')
             return []
         return self._build(jobs_list, seen_ids)
 
@@ -248,7 +386,7 @@ class UpworkScraper:
                 j['score'] = score_job(j)
                 if j['score'] >= min_score:
                     result.append(j)
-                    logger.info(f'✅ score={j["score"]}: {j["title"][:60]}')
+                    logger.info(f'score={j["score"]}: {j["title"][:60]}')
             except Exception as e:
                 logger.debug(f'Error: {e}')
         return result
@@ -289,7 +427,7 @@ class UpworkScraper:
             await context.add_cookies(cookies)
             logger.info(f'Cookies cargadas: {len(cookies)}')
         except FileNotFoundError:
-            logger.info('Sin cookies previas — se pedirá login manual')
+            logger.info('Sin cookies previas — se pedira login manual')
         except Exception as e:
             logger.warning(f'Error cargando cookies: {e}')
 
