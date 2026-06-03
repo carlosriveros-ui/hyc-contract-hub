@@ -51,9 +51,9 @@ async def main():
     scheduler.start()
     logger.info(f'Scheduler activo: check cada {interval} min | reporte semanal lunes 8am COT')
 
-    # Primera verificación al arrancar (después de 60s para que el bot esté listo)
+    # Primera verificación al arrancar (después de 10s para que el bot esté listo)
     async def first_check():
-        await asyncio.sleep(60)
+        await asyncio.sleep(10)
         logger.info('Primera verificación de jobs...')
         await bot.check_new_jobs()
 

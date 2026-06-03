@@ -38,6 +38,7 @@ jobs:
             echo "==> Deployando upwork-bot..."
             cp /tmp/hyc-repo/vps/upwork-bot/scraper.py /opt/upwork-bot/
             cp /tmp/hyc-repo/vps/upwork-bot/bot.py /opt/upwork-bot/
+            cp /tmp/hyc-repo/vps/upwork-bot/main.py /opt/upwork-bot/
             cp /tmp/hyc-repo/vps/upwork-bot/proposals.py /opt/upwork-bot/
             cp /tmp/hyc-repo/vps/upwork-bot/database.py /opt/upwork-bot/
             cp /tmp/hyc-repo/vps/upwork-bot/requirements.txt /opt/upwork-bot/
