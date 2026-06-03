@@ -147,17 +147,20 @@ class UpworkScraper:
             await asyncio.sleep(0.5)
 
             await page.locator('#login_password_continue').click()
-            await asyncio.sleep(2)
+            await asyncio.sleep(5)  # Upwork tiene animación CSS en este campo
 
-            # Password
+            # Password — el campo existe pero está hidden hasta que termina la animación
             password_input = page.locator('#login_password')
-            await password_input.wait_for(state='visible', timeout=10000)
-            await password_input.click()
-            await asyncio.sleep(0.3)
-            await password_input.fill(self.password)
+            try:
+                await password_input.wait_for(state='visible', timeout=20000)
+                await password_input.click()
+            except PlaywrightTimeout:
+                logger.warning('Password visible timeout — intentando force fill')
+            await asyncio.sleep(0.5)
+            await password_input.fill(self.password, force=True)
             await asyncio.sleep(0.5)
 
-            await page.locator('#login_control_continue').click()
+            await page.locator('#login_control_continue').click(force=True)
 
             try:
                 await page.wait_for_url('**/find-work/**', timeout=25000)
