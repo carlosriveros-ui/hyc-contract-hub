@@ -200,94 +200,84 @@ class UpworkScraper:
             return False
 
     async def _scrape_feed_page(self, page, url: str, seen_ids: set) -> list[dict]:
-        """Scrape jobs from authenticated find-work pages — no CF challenge, no Tor block."""
-        logger.info(f'Cargando feed: {url}')
+        """
+        Scrape jobs by intercepting API responses as the page loads.
+        The find-work page is CSR — jobs come from JSON API calls, not from the initial HTML.
+        """
+        logger.info(f'Cargando feed con interceptor: {url}')
+
+        captured = []
+
+        async def on_response(response):
+            ct = response.headers.get('content-type', '')
+            if 'application/json' not in ct:
+                return
+            resp_url = response.url
+            if 'upwork.com' not in resp_url:
+                return
+            try:
+                data = await response.json()
+                if not isinstance(data, dict):
+                    return
+                # Look for any response that contains job arrays
+                has_jobs = (
+                    isinstance(data.get('results'), list)
+                    or isinstance(data.get('jobs'), list)
+                    or isinstance(data.get('data', {}).get('jobs'), list)
+                    or isinstance(data.get('data', {}).get('results'), list)
+                )
+                if has_jobs:
+                    captured.append({'url': resp_url, 'data': data})
+                    logger.info(f'API con jobs capturada: {resp_url}')
+                else:
+                    logger.debug(f'API JSON (sin jobs): {resp_url} — keys: {list(data.keys())[:6]}')
+            except Exception as e:
+                logger.debug(f'Error leyendo resp JSON {resp_url}: {e}')
+
+        page.on('response', on_response)
+
         try:
             await page.goto(url, wait_until='domcontentloaded', timeout=30000)
         except Exception as e:
             logger.error(f'Error navegando a {url}: {e}')
+            page.remove_listener('response', on_response)
             return []
 
         title = await page.title()
         current_url = page.url
         if 'login' in current_url or 'account-security' in current_url or 'blocked' in title.lower():
-            logger.warning(f'Bloqueado/sesión inválida. Title: "{title}" URL: {current_url}')
+            logger.warning(f'Bloqueado/sesión inválida. Title: "{title}"')
+            page.remove_listener('response', on_response)
             return []
-
         if 'just a moment' in title.lower():
-            logger.warning(f'CF challenge en {url} — saltando')
+            logger.warning(f'CF challenge en {url}')
+            page.remove_listener('response', on_response)
             return []
 
-        # Wait for React SPA to finish loading jobs via async API calls
+        # Wait for async API calls to complete
         try:
-            await page.wait_for_load_state('networkidle', timeout=20000)
+            await page.wait_for_load_state('networkidle', timeout=25000)
         except Exception:
             pass
         await asyncio.sleep(3)
 
-        # Try extended tile selectors (find-work page may use different classes)
-        tile_selector = (
-            'article[data-test="job-tile"], '
-            '[data-test="job-tile"], '
-            '[data-job-uid], '
-            'section[data-test="job-tile"], '
-            '[data-cy="job-tile"], '
-            '.job-tile, '
-            'article.up-card-section'
-        )
-        try:
-            await page.wait_for_selector(tile_selector, timeout=10000, state='visible')
-            logger.info('Tiles visibles en DOM')
-        except Exception:
-            logger.warning('Timeout tiles — inspeccionando HTML...')
-            # Log more HTML to understand the DOM structure
-            full_html = await page.content()
-            logger.warning(f'HTML (1500 chars): {full_html[:1500]}')
+        page.remove_listener('response', on_response)
+        logger.info(f'APIs JSON con jobs capturadas: {len(captured)}')
 
-        # Try __NEXT_DATA__ (SSR jobs embedded in page)
-        try:
-            next_data_str = await page.evaluate(
-                "() => { const el = document.getElementById('__NEXT_DATA__'); return el ? el.textContent : null; }"
-            )
-            if next_data_str:
-                data = json.loads(next_data_str)
-                jobs = self._parse_next_data(data, seen_ids)
+        for item in captured:
+            try:
+                jobs = self._parse_api_response(item['data'], seen_ids)
                 if jobs:
-                    logger.info(f'{len(jobs)} jobs via __NEXT_DATA__ en {url}')
+                    logger.info(f'{len(jobs)} jobs válidos de {item["url"]}')
                     return self._filter_jobs(jobs)
-                logger.info('__NEXT_DATA__ presente pero sin jobs — parseando DOM')
-        except Exception as e:
-            logger.debug(f'Error __NEXT_DATA__: {e}')
+            except Exception as e:
+                logger.debug(f'Error parseando {item["url"]}: {e}')
 
-        # DOM tile extraction — try many selectors
-        jobs_raw = []
-        for sel in [
-            'article[data-test="job-tile"]',
-            '[data-test="job-tile"]',
-            '[data-job-uid]',
-            'section[data-test="job-tile"]',
-            '[data-cy="job-tile"]',
-            '.job-tile article',
-            'article.up-card-section',
-        ]:
-            tiles = await page.query_selector_all(sel)
-            if tiles:
-                logger.info(f'{len(tiles)} tiles con selector "{sel}"')
-                for tile in tiles[:25]:
-                    try:
-                        job = await self._extract_tile(tile)
-                        if job and job['id'] not in seen_ids:
-                            job['score'] = score_job(job)
-                            jobs_raw.append(job)
-                    except Exception as e:
-                        logger.debug(f'Error tile: {e}')
-                break
+        # Log any JSON URLs seen for diagnostics
+        if not captured:
+            logger.warning(f'0 APIs con jobs interceptadas en {url}. Title: "{title}"')
 
-        if not jobs_raw:
-            html_preview = (await page.content())[:400]
-            logger.warning(f'0 tiles en DOM. Title: "{title}". HTML: {html_preview}')
-
-        return self._filter_jobs(jobs_raw)
+        return []
 
     async def _search_jobs(self, page, query: str, seen_ids: set) -> list[dict]:
         url = (
