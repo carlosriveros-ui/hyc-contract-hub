@@ -30,8 +30,11 @@ Siempre comunica en español. Sé conciso en Telegram (máx 4000 chars).
 Usa emojis apropiados para hacer los mensajes más legibles.
 Prioriza información accionable para Carlos Riveros (CEO de HYC Proyectos).`;
 
-export async function runAgent(task, context = {}) {
-  console.log(`[hermes] Tarea: ${task.slice(0, 80)}...`);
+const MODEL_SMART = 'claude-opus-4-8';
+const MODEL_FAST = 'claude-haiku-4-5-20251001';
+
+export async function runAgent(task, context = {}, model = MODEL_SMART) {
+  console.log(`[hermes] Tarea [${model.split('-')[1]}]: ${task.slice(0, 80)}...`);
 
   const messages = [
     {
@@ -47,7 +50,7 @@ export async function runAgent(task, context = {}) {
     iterations++;
 
     const response = await client.messages.create({
-      model: 'claude-opus-4-8',
+      model,
       max_tokens: 8096,
       system: SYSTEM_PROMPT,
       tools: toolDefinitions,
@@ -129,11 +132,12 @@ function setupCronJobs() {
     await runTalentTasks(runAgent);
   });
 
-  // ─── MONITOREO DE SALUD (cada hora) ───
+  // ─── MONITOREO DE SALUD (cada hora) — usa Haiku para ahorrar créditos ───
   cron.schedule('0 * * * *', async () => {
     await runAgent(
       'Verifica rápidamente el estado de la app. Solo notifica por Telegram si hay un error o problema.',
-      { source: 'health-check' }
+      { source: 'health-check' },
+      MODEL_FAST
     );
   });
 
@@ -170,7 +174,7 @@ async function main() {
   setupCronJobs();
   startWebhookServer(runAgent);
 
-  // Verificación inicial al arrancar
+  // Verificación inicial al arrancar — usa Haiku para ahorrar créditos
   await runAgent(
     `Haz una verificación inicial de todos los sistemas:
     1. Confirma que la app en producción responde
@@ -183,7 +187,8 @@ async function main() {
        - 💰 Agente de Precios (insumos de construcción)
        - 👷 Agente de Talento (profesionales y mano de obra)
     Usa nivel "success" para el mensaje de bienvenida.`,
-    { source: 'startup' }
+    { source: 'startup' },
+    MODEL_FAST
   );
 }
 
