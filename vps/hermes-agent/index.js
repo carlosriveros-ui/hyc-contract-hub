@@ -44,14 +44,14 @@ export async function runAgent(task, context = {}, model = MODEL_SMART) {
   ];
 
   let iterations = 0;
-  const MAX_ITERATIONS = 15;
+  const MAX_ITERATIONS = 8;
 
   while (iterations < MAX_ITERATIONS) {
     iterations++;
 
     const response = await client.messages.create({
       model,
-      max_tokens: 8096,
+      max_tokens: 4096,
       system: SYSTEM_PROMPT,
       tools: toolDefinitions,
       messages,
@@ -101,47 +101,67 @@ export async function runAgent(task, context = {}, model = MODEL_SMART) {
   return { success: false, result: 'Máximo de iteraciones alcanzado' };
 }
 
+// Ping HTTP simple a la app — costo $0 en créditos AI.
+// Solo llama a Claude si detecta un problema real.
+async function runHealthCheck() {
+  const appUrl = process.env.APP_URL;
+  if (!appUrl) return;
+
+  try {
+    const resp = await fetch(`${appUrl}/api/data?table=contracts`, {
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    console.log('[health] ✅ App OK');
+  } catch (err) {
+    console.error('[health] ⚠️ App caída:', err.message);
+    // Solo aquí usamos créditos — cuando hay un problema real
+    await runAgent(
+      `ALERTA: La app en producción (${appUrl}) no responde. Error: ${err.message}.
+      Envía una alerta de error por Telegram indicando que la app está caída.`,
+      { source: 'health-check', error: err.message },
+      MODEL_FAST
+    ).catch((e) => console.error('[health] Error notificando:', e.message));
+  }
+}
+
 function setupCronJobs() {
-  // ─── SISTEMA HYC (todos los días 7:00am COT = 12:00 UTC) ───
+  // ─── SISTEMA HYC (todos los días 7:00am COT = 12:00 UTC) — Haiku ───
   cron.schedule('0 12 * * *', async () => {
     console.log('[cron] Tareas diarias del sistema...');
-    await runDailyTasks(runAgent);
+    await runDailyTasks(runAgent, MODEL_FAST);
   });
 
-  // ─── NOTICIAS + PROSPECCIÓN COMERCIAL (L-V 7:30am COT = 12:30 UTC) ───
+  // ─── NOTICIAS + PROSPECCIÓN COMERCIAL (L-V 7:30am COT = 12:30 UTC) — Sonnet ───
   cron.schedule('30 12 * * 1-5', async () => {
     console.log('[cron] Inteligencia de negocio...');
     await runBusinessIntelligenceTasks(runAgent);
   });
 
-  // ─── SECOP LICITACIONES (L, X, V a las 8am COT = 13:00 UTC) ───
+  // ─── SECOP LICITACIONES (L, X, V a las 8am COT = 13:00 UTC) — Sonnet ───
   cron.schedule('0 13 * * 1,3,5', async () => {
     console.log('[cron] Buscando licitaciones SECOP...');
     await runSecopTasks(runAgent);
   });
 
-  // ─── PRECIOS INSUMOS (L y J a las 9am COT = 14:00 UTC) ───
+  // ─── PRECIOS INSUMOS (L y J a las 9am COT = 14:00 UTC) — Sonnet ───
   cron.schedule('0 14 * * 1,4', async () => {
     console.log('[cron] Monitoreando precios de insumos...');
     await runPricesTasks(runAgent);
   });
 
-  // ─── TALENTO (M y V a las 9am COT = 14:00 UTC) ───
+  // ─── TALENTO (M y V a las 9am COT = 14:00 UTC) — Sonnet ───
   cron.schedule('0 14 * * 2,5', async () => {
     console.log('[cron] Buscando talento...');
     await runTalentTasks(runAgent);
   });
 
-  // ─── MONITOREO DE SALUD (cada hora) — usa Haiku para ahorrar créditos ───
-  cron.schedule('0 * * * *', async () => {
-    await runAgent(
-      'Verifica rápidamente el estado de la app. Solo notifica por Telegram si hay un error o problema.',
-      { source: 'health-check' },
-      MODEL_FAST
-    );
+  // ─── MONITOREO DE SALUD (cada 4 horas) — HTTP ping, sin créditos AI ───
+  cron.schedule('0 */4 * * *', async () => {
+    await runHealthCheck();
   });
 
-  // ─── RESUMEN SEMANAL (Lunes 8am COT = 13:00 UTC) ───
+  // ─── RESUMEN SEMANAL (Lunes 8am COT = 13:00 UTC) — Sonnet ───
   cron.schedule('0 13 * * 1', async () => {
     await runAgent(
       `Genera el resumen semanal de HYC Proyectos:
@@ -156,13 +176,13 @@ function setupCronJobs() {
   });
 
   console.log('[hermes] ✅ Cron jobs configurados:');
-  console.log('   • Sistema HYC: diario 7am COT');
-  console.log('   • Noticias + Comercial: L-V 7:30am COT');
-  console.log('   • SECOP: L,X,V 8am COT');
-  console.log('   • Precios: L,J 9am COT');
-  console.log('   • Talento: M,V 9am COT');
-  console.log('   • Salud: cada hora');
-  console.log('   • Resumen semanal: Lunes 8am COT');
+  console.log('   • Sistema HYC: diario 7am COT (Haiku)');
+  console.log('   • Noticias + Comercial: L-V 7:30am COT (Sonnet)');
+  console.log('   • SECOP: L,X,V 8am COT (Sonnet)');
+  console.log('   • Precios: L,J 9am COT (Sonnet)');
+  console.log('   • Talento: M,V 9am COT (Sonnet)');
+  console.log('   • Salud: cada 4 horas (HTTP ping, $0 AI)');
+  console.log('   • Resumen semanal: Lunes 8am COT (Sonnet)');
 }
 
 async function main() {
@@ -174,26 +194,25 @@ async function main() {
   setupCronJobs();
   startWebhookServer(runAgent);
 
-  // Verificación inicial al arrancar — usa Haiku para ahorrar créditos
-  // No mata el proceso si falla (Supabase caído, red, etc.)
+  // Ping inicial sin Claude — solo verifica conectividad
+  await runHealthCheck();
+
+  // Bienvenida por Telegram — usa Haiku (barato)
   try {
     await runAgent(
-      `Haz una verificación inicial de todos los sistemas:
-    1. Confirma que la app en producción responde
-    2. Confirma que Supabase está accesible
-    3. Envía un mensaje de bienvenida por Telegram indicando que Hermes está activo y lista los agentes disponibles:
-       - 🏗️ Sistema HYC (contratos, actividades, materiales)
-       - 🎯 Agente Comercial B2B (prospectos en 5 sectores)
-       - 📋 Agente SECOP (licitaciones 400M-10B COP)
-       - 📰 Agente de Noticias (contenido LinkedIn)
-       - 💰 Agente de Precios (insumos de construcción)
-       - 👷 Agente de Talento (profesionales y mano de obra)
-    Usa nivel "success" para el mensaje de bienvenida.`,
+      `Envía un mensaje de bienvenida por Telegram indicando que Hermes está activo. Lista los agentes:
+       - 🏗️ Sistema HYC (contratos, actividades, materiales) — diario 7am
+       - 🎯 Agente Comercial B2B (prospectos en 5 sectores) — L-V 7:30am
+       - 📋 Agente SECOP (licitaciones 400M-10B COP) — L,X,V 8am
+       - 📰 Agente de Noticias (contenido LinkedIn) — L-V 7:30am
+       - 💰 Agente de Precios (insumos de construcción) — L,J 9am
+       - 👷 Agente de Talento (profesionales y mano de obra) — M,V 9am
+      Usa nivel "success".`,
       { source: 'startup' },
       MODEL_FAST
     );
   } catch (err) {
-    console.error('[hermes] Error en verificación inicial (no fatal):', err.message);
+    console.error('[hermes] Error en bienvenida (no fatal):', err.message);
   }
 }
 

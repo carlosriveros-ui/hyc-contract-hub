@@ -8,7 +8,7 @@ import { runTalentAgent } from '../agents/talent.js';
 /**
  * Tareas diarias del sistema HYC (monitoreo interno)
  */
-export async function runDailyTasks(runAgent) {
+export async function runDailyTasks(runAgent, model) {
   const tasks = [
     {
       name: 'Reporte de actividades pendientes',
@@ -36,7 +36,7 @@ export async function runDailyTasks(runAgent) {
   for (const task of tasks) {
     try {
       console.log(`[daily] ${task.name}`);
-      await runAgent(task.prompt, { taskName: task.name, source: 'daily-cron' });
+      await runAgent(task.prompt, { taskName: task.name, source: 'daily-cron' }, model);
     } catch (err) {
       console.error(`[daily] Error en "${task.name}":`, err.message);
     }
