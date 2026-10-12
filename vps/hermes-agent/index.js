@@ -2,6 +2,7 @@ import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
 import cron from 'node-cron';
 import { startWebhookServer } from './tasks/webhook.js';
+import { startTelegramListener } from './tasks/telegram-listener.js';
 import {
   runDailyTasks,
   runBusinessIntelligenceTasks,
@@ -193,6 +194,7 @@ async function main() {
 
   setupCronJobs();
   startWebhookServer(runAgent);
+  startTelegramListener(runAgent);
 
   // Ping inicial sin Claude — solo verifica conectividad
   await runHealthCheck();
