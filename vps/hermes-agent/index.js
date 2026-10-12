@@ -30,8 +30,8 @@ Siempre comunica en español. Sé conciso en Telegram (máx 4000 chars).
 Usa emojis apropiados para hacer los mensajes más legibles.
 Prioriza información accionable para Carlos Riveros (CEO de HYC Proyectos).`;
 
-const MODEL_SMART = 'claude-opus-4-5';
-const MODEL_FAST = 'claude-haiku-4-5';
+const MODEL_SMART = 'claude-sonnet-5-5';
+const MODEL_FAST = 'claude-haiku-5-5';
 
 export async function runAgent(task, context = {}, model = MODEL_SMART) {
   console.log(`[hermes] Tarea [${model.split('-')[1]}]: ${task.slice(0, 80)}...`);
