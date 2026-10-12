@@ -175,8 +175,10 @@ async function main() {
   startWebhookServer(runAgent);
 
   // Verificación inicial al arrancar — usa Haiku para ahorrar créditos
-  await runAgent(
-    `Haz una verificación inicial de todos los sistemas:
+  // No mata el proceso si falla (Supabase caído, red, etc.)
+  try {
+    await runAgent(
+      `Haz una verificación inicial de todos los sistemas:
     1. Confirma que la app en producción responde
     2. Confirma que Supabase está accesible
     3. Envía un mensaje de bienvenida por Telegram indicando que Hermes está activo y lista los agentes disponibles:
@@ -187,9 +189,12 @@ async function main() {
        - 💰 Agente de Precios (insumos de construcción)
        - 👷 Agente de Talento (profesionales y mano de obra)
     Usa nivel "success" para el mensaje de bienvenida.`,
-    { source: 'startup' },
-    MODEL_FAST
-  );
+      { source: 'startup' },
+      MODEL_FAST
+    );
+  } catch (err) {
+    console.error('[hermes] Error en verificación inicial (no fatal):', err.message);
+  }
 }
 
 main().catch((err) => {
