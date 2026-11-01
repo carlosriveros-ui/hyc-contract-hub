@@ -86,6 +86,8 @@ Datos de la app (Supabase: contrato, sedes, actividades) → `variables.datos` e
 
 ### 3-E. Didáctico PLL
 
+Escenas Manim en `videos/explicativos/`: `IAConCriterio` (1:1, ~34 s: pregunta → informe → qué prepara la IA / qué valida el responsable → decisión con criterio → idea central → pregunta de aplicación → slogan) y `CurvaS` (16:9). Identidad PLL en Manim: marco dorado, etiqueta, retícula discreta (`reticula` de marcas.json), énfasis serif itálico solo en "criterio y propósito".
+
 Guion corto (1 idea) → escena Manim → narración ElevenLabs (o voz de Carlos grabada) → MoviePy para unir audio + video + música → subtítulos.
 
 ---
