@@ -1,11 +1,14 @@
 """Editor de video real (grabaciones) con MoviePy — sirve para todas las marcas.
 
-Une clips, los ajusta a un formato, pone logo de la marca, título inicial y música.
+Une clips con transiciones, los ajusta a un formato, pone logo de la marca, título inicial y música.
 
 Ejemplo:
   python editar.py --marca hyc --clips obra1.mp4 obra2.mp4 \
       --formato 16:9 --titulo "Mantenimiento sede Norte" --musica fondo.mp3 \
+      --transicion deslizar --lado izquierda \
       --salida salida/sede-norte.mp4
+
+Transiciones: cruzado (por defecto), deslizar, negro, corte.
 """
 import argparse
 from pathlib import Path
@@ -26,7 +29,9 @@ from moviepy import (
 from marcas import MARCAS
 
 FORMATOS = {"16:9": (1920, 1080), "1:1": (1080, 1080), "9:16": (1080, 1920)}
-FADE = 0.5
+TRANSICIONES = ("cruzado", "deslizar", "negro", "corte")
+LADOS = ("izquierda", "derecha", "arriba", "abajo")
+LADO_MOVIEPY = {"izquierda": "left", "derecha": "right", "arriba": "top", "abajo": "bottom"}
 
 
 def hex_a_rgb(color):
@@ -41,6 +46,45 @@ def ajustar(clip, ancho, alto):
     return clip.cropped(x_center=clip.w / 2, y_center=clip.h / 2, width=ancho, height=alto)
 
 
+def unir(partes, transicion, duracion, lado):
+    """Une los clips con la transición elegida.
+
+    - cruzado:  el clip siguiente aparece encima del anterior (crossfade), con mezcla de audio.
+    - deslizar: el clip siguiente entra deslizándose desde `lado` sobre el anterior.
+    - negro:    cada clip baja a negro y el siguiente sube desde negro.
+    - corte:    sin transición.
+    """
+    if transicion == "corte" or len(partes) == 1:
+        return concatenate_videoclips(partes, method="compose")
+
+    # La transición no puede durar más que la mitad del clip más corto
+    d = min(duracion, min(c.duration for c in partes) / 2)
+
+    if transicion == "negro":
+        partes = [c.with_effects([vfx.FadeIn(d), vfx.FadeOut(d)]) for c in partes]
+        return concatenate_videoclips(partes, method="compose")
+
+    entrada = vfx.CrossFadeIn(d) if transicion == "cruzado" else vfx.SlideIn(d, LADO_MOVIEPY[lado])
+    unidas = [partes[0]]
+    for c in partes[1:]:
+        unidas.append(c.with_effects([entrada]))
+    # Audio: el anterior baja mientras el siguiente sube durante el solapamiento
+    unidas = [
+        c.with_effects([afx.AudioFadeIn(d) if i else afx.AudioFadeIn(0.01), afx.AudioFadeOut(d)])
+        if c.audio is not None else c
+        for i, c in enumerate(unidas)
+    ]
+    # Composición manual (concatenate_videoclips centra los clips y anularía el deslizamiento)
+    colocadas, t = [], 0.0
+    for c in unidas:
+        colocadas.append(c.with_start(t))
+        t += c.duration - d
+    ancho, alto = partes[0].size
+    video = CompositeVideoClip(colocadas, size=(ancho, alto)).with_duration(t + d)
+    # Entrada y salida suaves del video completo
+    return video.with_effects([vfx.FadeIn(d), vfx.FadeOut(d)])
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--marca", required=True, choices=MARCAS)
@@ -52,6 +96,9 @@ def main():
     p.add_argument("--musica", help="Audio de fondo; se repite o corta a la duración del video")
     p.add_argument("--volumen-musica", type=float, default=0.25)
     p.add_argument("--sin-audio-original", action="store_true")
+    p.add_argument("--transicion", default="cruzado", choices=TRANSICIONES, help="Entre clips (por defecto: cruzado)")
+    p.add_argument("--duracion-transicion", type=float, default=0.8, help="Segundos (por defecto: 0.8)")
+    p.add_argument("--lado", default="derecha", choices=LADOS, help="Desde dónde entra el clip con --transicion deslizar")
     a = p.parse_args()
 
     marca = MARCAS[a.marca]
@@ -71,9 +118,9 @@ def main():
         clip = ajustar(VideoFileClip(ruta), ancho, alto)
         if a.sin_audio_original:
             clip = clip.without_audio()
-        partes.append(clip.with_effects([vfx.FadeIn(FADE), vfx.FadeOut(FADE)]))
+        partes.append(clip)
 
-    video = concatenate_videoclips(partes, method="compose")
+    video = unir(partes, a.transicion, a.duracion_transicion, a.lado)
 
     logo_path = Path(marca["logo"])
     if logo_path.exists():
