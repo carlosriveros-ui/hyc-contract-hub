@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 /* MantHYC Design System — HYC Proyectos de Ingeniería SAS
-   All colors in HSL. Brand red #CC0607, dark #1A1A2E.
+   All colors in HSL. Brand red #C52026 (paleta aprobada, videos/marcas.json), dark #1A1A2E.
 */
 
 @layer base {
@@ -20,9 +20,9 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 26% 14%;
 
-    --primary: 359 96% 41%;            /* #CC0607 HYC red */
+    --primary: 358 72% 45%;            /* #C52026 HYC red */
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 359 96% 36%;
+    --primary-hover: 358 72% 40%;
 
     --secondary: 240 33% 14%;          /* #1A1A2E */
     --secondary-foreground: 0 0% 98%;
@@ -46,19 +46,19 @@
 
     --border: 220 13% 89%;
     --input: 220 13% 89%;
-    --ring: 359 96% 41%;
+    --ring: 358 72% 45%;
 
     --radius: 0.5rem;
 
     /* Sidebar (dark) */
     --sidebar-background: 240 33% 14%;
     --sidebar-foreground: 220 14% 88%;
-    --sidebar-primary: 359 96% 41%;
+    --sidebar-primary: 358 72% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 25% 20%;
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 240 20% 22%;
-    --sidebar-ring: 359 96% 41%;
+    --sidebar-ring: 358 72% 45%;
 
     /* Status badges */
     --status-requested: 220 9% 46%;
@@ -81,7 +81,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 26% 12%;
     --popover-foreground: 0 0% 98%;
-    --primary: 359 96% 50%;
+    --primary: 358 72% 54%;
     --primary-foreground: 0 0% 100%;
     --secondary: 240 20% 20%;
     --secondary-foreground: 0 0% 98%;
@@ -93,7 +93,7 @@
     --destructive-foreground: 0 0% 100%;
     --border: 240 20% 22%;
     --input: 240 20% 22%;
-    --ring: 359 96% 50%;
+    --ring: 358 72% 54%;
   }
 }
 
