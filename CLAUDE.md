@@ -22,5 +22,5 @@ Lee `CONTEXT.md` al iniciar: tiene el contexto completo del proyecto.
 ## Datos y marcas
 
 - Cifras de HYC confirmadas por Carlos: **201 proyectos · 650.000 m² intervenidos (no "construidos") · +20 años de experiencia**. No usar 167 proyectos ni 405.000 m². Son de HYC: no atribuirlas a Carlos ni a Project Leader Lab.
-- Project Leader Lab: base de marca en `videos/marca-pll.md`. El slogan "Lidera proyectos con criterio y propósito" es una propuesta pendiente de aprobación.
+- Project Leader Lab: base de marca en `videos/marca-pll.md`. Slogan **aprobado** por Carlos (1-nov-2026): "Lidera proyectos con criterio y propósito" (único slogan; no usar alternativas). El resto de la base de marca sigue como propuesta.
 - No clonar la voz de Carlos ni atribuirle una locución sin su autorización específica.

@@ -1,7 +1,7 @@
 // Presentación de Project Leader Lab (1080×1080, LinkedIn) → Remotion. Ver REGLA en CONTEXT.md.
 // Identidad PLL (comparte paleta con Carlos, se diferencia por composición): marco dorado,
 // etiqueta "PROJECT LEADER LAB" con tracking amplio, todo centrado. Paleta de videos/marcas.json.
-// Textos: base de marca PLL del 1-nov-2026 (videos/marca-pll.md). El slogan es una PROPUESTA, no aprobado.
+// Textos: base de marca PLL del 1-nov-2026 (videos/marca-pll.md). Slogan aprobado (1-nov-2026).
 import { AbsoluteFill, Easing, interpolate, Sequence, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import MARCAS from "../../videos/marcas.json";
 

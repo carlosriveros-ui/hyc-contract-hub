@@ -1,8 +1,9 @@
 # Project Leader Lab — base de marca (resumen operativo)
 
 > Fuente: "Base de marca de Project Leader Lab" + "Brief para Claude", 1-nov-2026 (documento Word de Carlos).
-> **Estado:** propuesta estratégica para revisión de Carlos. El slogan y el posicionamiento NO están aprobados;
-> no presentarlos como identidad histórica u oficial. La paleta sí viene de la guía visual v2 aceptada (24-oct-2026).
+> **Estado:** el **slogan está APROBADO por Carlos (1-nov-2026)**. El resto (posicionamiento, descriptor, mensajes,
+> bios, manifiesto, oferta) sigue siendo propuesta para su revisión: no presentarlo como identidad oficial.
+> La paleta viene de la guía visual v2 aceptada (24-oct-2026).
 
 ## Arquitectura de marcas (no mezclar)
 
@@ -14,10 +15,15 @@
 
 El sitio público también usa "Carlos Riveros Lab": convivencia pendiente de decisión. No renombrar el Lab ni sus cuentas.
 
-## Propuesta central (pendiente de aprobación)
+## Slogan oficial (aprobado 1-nov-2026)
 
-- **Slogan recomendado:** Lidera proyectos con criterio y propósito.
-- Alternativas (no rotarlas como oficiales): "Del conocimiento a la ejecución" · "Mejores decisiones para liderar proyectos".
+- **Lidera proyectos con criterio y propósito.**
+- Es el único slogan de la marca: usar solo este. Las alternativas de la base ("Del conocimiento a la ejecución",
+  "Mejores decisiones para liderar proyectos") quedan descartadas como slogan.
+- No se ha verificado exclusividad comercial ni registrabilidad de la frase.
+
+## Resto de la propuesta (pendiente de aprobación)
+
 - **Descriptor:** Formación y herramientas en gerencia de proyectos, liderazgo e inteligencia artificial aplicada.
 - **Mensaje de apoyo:** Conecta lo que aprendes con las decisiones que tu proyecto necesita.
 - **Bio corta:** Gerencia de proyectos, liderazgo e IA aplicada. Ideas y herramientas para llevar el aprendizaje a la ejecución. Por Carlos Riveros.
