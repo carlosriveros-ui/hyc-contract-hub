@@ -70,6 +70,11 @@ No hay conector de CapCut ni Descript: Carlos edita, Claude prepara:
 
 ### 3-D. Video animado con datos (HYC)
 
+Plantillas Revideo listas en `videos/hyc/` (`npm run render -- <nombre>` → `output/<nombre>.mp4`):
+- `presentacion` — presentación de marca 1:1 (~11 s): franjas rojas + nombre → cifras con conteo (167 proyectos · 405.000 m² · +15 años) → cierre rojo "CONSTRUIMOS CONFIANZA" + web.
+- `resumen-contrato` — avance de un contrato 16:9 (cliente, sedes, % de actividades).
+- Texto pequeño sobre negro: en blanco, no en rojo (el rojo sobre `#211F20` no da contraste); rojo para franjas, barras y fondos.
+
 Datos de la app (Supabase: contrato, sedes, actividades) → `variables.datos` en `videos/hyc/src/render.ts` → `npm run render` → (opcional) MoviePy para unirlo con grabaciones de obra → OpusClip/manual para publicar.
 
 ### 3-E. Didáctico PLL
