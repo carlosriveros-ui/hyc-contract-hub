@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+salida/
+*.mp4
+*.mov
+*.mp3
+*.wav
