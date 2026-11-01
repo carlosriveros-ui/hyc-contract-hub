@@ -17,7 +17,7 @@ Grabaciones de Carlos (1-nov-2026, verticales) + animación de cada marca. Guion
    (corrige errores del reconocimiento contra el guion: "HAC"→"HYC", "incomplet"→"incompleta", etc.; líneas ≤ ~24 caracteres,
    sin terminar en "de/y/la…", sin partir "Project Leader Lab").
 4. Render:
-   - HYC: `cd videos/hyc && npm run render:hablado` → `videos/hyc/output/hablado.mp4`
+   - HYC: `cd videos/hyc && npm run render:hablado` → `videos/hyc/output/hablado.mp4` (copia la grabación a `videos/hyc/public/`, ignorada en git: el renderer de Revideo saca el audio de ahí)
    - Carlos: `npx remotion render src/remotion/index.ts HabladoCarlos carlos.mp4 --public-dir=videos/producciones/2026-11-presentaciones/fuentes`
    - PLL: `npx remotion render src/remotion/index.ts HabladoPLL pll.mp4 --public-dir=videos/producciones/2026-11-presentaciones/fuentes`
 
