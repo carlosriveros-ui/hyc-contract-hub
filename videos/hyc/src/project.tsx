@@ -6,6 +6,9 @@ import { makeScene2D, Rect, Txt } from "@revideo/2d";
 import MARCAS from "../../marcas.json";
 
 // Paleta HYC (videos/marcas.json). El logo de HYC se usa original, nunca recoloreado.
+// Tipografía HYC (brand-hyc): Gotham → Montserrat → Arial. Se usan fuentes INSTALADAS en el equipo;
+// no se descargan de internet (si la red falla, el render se cuelga).
+const FUENTE = "Gotham, Montserrat, Arial, sans-serif";
 const { rojo: HYC_ROJO, negro: HYC_NEGRO, blanco: HYC_BLANCO } = MARCAS.hyc;
 
 // Variables por defecto; se sobreescriben desde render.ts (renderVideo({ variables }))
@@ -32,17 +35,17 @@ const resumenContrato = makeScene2D("resumen-contrato", function* (view) {
 
   view.add(
     <>
-      <Txt ref={cliente} text={v.cliente} y={-120} fontSize={40} fill={HYC_BLANCO + "cc"} fontFamily="Inter, sans-serif" opacity={0} />
-      <Txt ref={titulo} text={v.contrato} y={-20} fontSize={80} fontWeight={800} fill={HYC_BLANCO} fontFamily="Inter, sans-serif" opacity={0} />
-      <Txt ref={resumen} text={`${v.sedes} sedes · ${v.actividadesCompletadas}/${v.actividadesTotales} actividades`} y={-150} fontSize={48} fill={HYC_BLANCO} fontFamily="Inter, sans-serif" opacity={0} />
+      <Txt ref={cliente} text={v.cliente} y={-120} fontSize={40} fill={HYC_BLANCO + "cc"} fontFamily={FUENTE} opacity={0} />
+      <Txt ref={titulo} text={v.contrato} y={-20} fontSize={80} fontWeight={800} fill={HYC_BLANCO} fontFamily={FUENTE} opacity={0} />
+      <Txt ref={resumen} text={`${v.sedes} sedes · ${v.actividadesCompletadas}/${v.actividadesTotales} actividades`} y={-150} fontSize={48} fill={HYC_BLANCO} fontFamily={FUENTE} opacity={0} />
       <Rect width={BAR_W} height={48} radius={24} fill={HYC_BLANCO + "33"} clip opacity={0} ref={barra}>
         <Rect x={-BAR_W / 2} offset={[-1, 0]} width={0} height={48} fill={HYC_BLANCO} />
       </Rect>
       {/* Franja inferior en negro HYC. Si se agrega el logo, usar el archivo original sin recolorear. */}
       <Rect y={1080 / 2 - 50} width={1920} height={100} fill={HYC_NEGRO}>
-        <Txt text={MARCAS.hyc.nombre} fontSize={32} fontWeight={700} fill={HYC_BLANCO} fontFamily="Inter, sans-serif" />
+        <Txt text={MARCAS.hyc.nombre} fontSize={32} fontWeight={700} fill={HYC_BLANCO} fontFamily={FUENTE} />
       </Rect>
-      <Txt ref={porcentaje} text="0%" y={140} fontSize={96} fontWeight={800} fill={HYC_BLANCO} fontFamily="Inter, sans-serif" opacity={0} />
+      <Txt ref={porcentaje} text="0%" y={140} fontSize={96} fontWeight={800} fill={HYC_BLANCO} fontFamily={FUENTE} opacity={0} />
     </>,
   );
 

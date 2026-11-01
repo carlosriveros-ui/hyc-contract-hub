@@ -303,6 +303,8 @@ Parseo de números: remueve `$`, `.` (miles), `,` → `.` decimal
 
 - Revideo/Remotion = videos **animados generados con código/datos**. MoviePy = **editar video grabado** (unir clips, logo, título, música). Un video animado de HYC puede pasar después por MoviePy para unirlo con grabaciones.
 
+> Flujo completo de producción (qué skill/conector/herramienta usar en cada caso): **`videos/PLAYBOOK.md`**.
+
 ### Paleta (fuente única: `videos/marcas.json`)
 
 Paleta de trabajo de la guía visual aprobada. **HEX aproximados, no certificados** por un manual de marca.
