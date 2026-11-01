@@ -4,7 +4,7 @@
   "description": "Plataforma de gestión de contratos de mantenimiento de edificaciones — HYC Proyectos de Ingeniería SAS",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1A1A2E",
+  "background_color": "#211F20",
   "theme_color": "#C52026",
   "orientation": "portrait-primary",
   "lang": "es-CO",

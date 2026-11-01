@@ -5,38 +5,38 @@
 @tailwind utilities;
 
 /* MantHYC Design System — HYC Proyectos de Ingeniería SAS
-   All colors in HSL. Brand red #C52026 (paleta aprobada, videos/marcas.json), dark #1A1A2E.
+   All colors in HSL. Brand red #C52026 (paleta aprobada, videos/marcas.json), dark #211F20 (Negro HYC).
 */
 
 @layer base {
   :root {
     --background: 0 0% 96.1%;          /* #F5F5F5 page bg */
     --surface: 0 0% 100%;              /* white cards */
-    --foreground: 240 26% 14%;         /* near #1A1A2E */
+    --foreground: 330 3% 12.5%;        /* #211F20 Negro HYC */
 
     --card: 0 0% 100%;
-    --card-foreground: 240 26% 14%;
+    --card-foreground: 330 3% 12.5%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 26% 14%;
+    --popover-foreground: 330 3% 12.5%;
 
     --primary: 358 72% 45%;            /* #C52026 HYC red */
     --primary-foreground: 0 0% 100%;
     --primary-hover: 358 72% 40%;
 
-    --secondary: 240 33% 14%;          /* #1A1A2E */
+    --secondary: 330 3% 12.5%;         /* #211F20 Negro HYC */
     --secondary-foreground: 0 0% 98%;
 
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
 
     --accent: 220 14% 94%;
-    --accent-foreground: 240 26% 14%;
+    --accent-foreground: 330 3% 12.5%;
 
     --success: 142 71% 35%;            /* #16A34A */
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;             /* #F59E0B */
-    --warning-foreground: 240 26% 14%;
+    --warning-foreground: 330 3% 12.5%;
     --info: 239 84% 67%;               /* #6366F1 */
     --info-foreground: 0 0% 100%;
     --pink: 330 81% 60%;               /* #EC4899 */
@@ -51,13 +51,13 @@
     --radius: 0.5rem;
 
     /* Sidebar (dark) */
-    --sidebar-background: 240 33% 14%;
+    --sidebar-background: 330 3% 12.5%;
     --sidebar-foreground: 220 14% 88%;
     --sidebar-primary: 358 72% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 25% 20%;
+    --sidebar-accent: 330 3% 20%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 240 20% 22%;
+    --sidebar-border: 330 3% 22%;
     --sidebar-ring: 358 72% 45%;
 
     /* Status badges */
@@ -69,30 +69,30 @@
     --status-issue: 0 73% 51%;
 
     /* Elevation */
-    --shadow-sm: 0 1px 2px 0 hsl(240 26% 14% / 0.04);
-    --shadow-md: 0 4px 12px -2px hsl(240 26% 14% / 0.08);
-    --shadow-lg: 0 12px 32px -8px hsl(240 26% 14% / 0.14);
+    --shadow-sm: 0 1px 2px 0 hsl(330 3% 12.5% / 0.04);
+    --shadow-md: 0 4px 12px -2px hsl(330 3% 12.5% / 0.08);
+    --shadow-lg: 0 12px 32px -8px hsl(330 3% 12.5% / 0.14);
   }
 
   .dark {
-    --background: 240 26% 8%;
+    --background: 330 3% 8%;
     --foreground: 0 0% 98%;
-    --card: 240 26% 12%;
+    --card: 330 3% 12.5%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 26% 12%;
+    --popover: 330 3% 12.5%;
     --popover-foreground: 0 0% 98%;
     --primary: 358 72% 54%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 20% 20%;
+    --secondary: 330 3% 20%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 20% 18%;
+    --muted: 330 3% 18%;
     --muted-foreground: 220 9% 65%;
-    --accent: 240 20% 20%;
+    --accent: 330 3% 20%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 73% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 240 20% 22%;
-    --input: 240 20% 22%;
+    --border: 330 3% 22%;
+    --input: 330 3% 22%;
     --ring: 358 72% 54%;
   }
 }
