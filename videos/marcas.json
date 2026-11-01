@@ -4,7 +4,13 @@
     "nombre": "HYC Proyectos",
     "rojo": "#C52026",
     "negro": "#211F20",
-    "blanco": "#FFFFFF"
+    "blanco": "#FFFFFF",
+    "cifras_confirmadas": {
+      "_fuente": "Carlos, 1-nov-2026. No usar 167 proyectos ni 405.000 m² (descartados). No sumar m² por categorías. Solo para HYC, no para Carlos ni PLL.",
+      "proyectos": 201,
+      "m2_intervenidos": 650000,
+      "anos_experiencia": "+20"
+    }
   },
   "carlos-riveros": {
     "nombre": "Carlos Riveros",
@@ -16,6 +22,10 @@
     "nombre": "Project Leader Lab",
     "fondo": "#10100E",
     "texto": "#F2F0E7",
-    "acento": "#C99B64"
+    "acento": "#C99B64",
+    "reticula": [
+      "#1D1C17",
+      "#2A271F"
+    ]
   }
 }

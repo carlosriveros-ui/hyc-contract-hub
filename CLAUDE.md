@@ -18,3 +18,9 @@ Lee `CONTEXT.md` al iniciar: tiene el contexto completo del proyecto.
 - Fuente única: `videos/marcas.json` (HEX de trabajo aproximados). No escribir HEX sueltos.
 - Carlos Riveros y Project Leader Lab comparten paleta; se diferencian por identidad y composición.
 - El logo de HYC se usa original, nunca recoloreado.
+
+## Datos y marcas
+
+- Cifras de HYC confirmadas por Carlos: **201 proyectos · 650.000 m² intervenidos (no "construidos") · +20 años de experiencia**. No usar 167 proyectos ni 405.000 m². Son de HYC: no atribuirlas a Carlos ni a Project Leader Lab.
+- Project Leader Lab: base de marca en `videos/marca-pll.md`. El slogan "Lidera proyectos con criterio y propósito" es una propuesta pendiente de aprobación.
+- No clonar la voz de Carlos ni atribuirle una locución sin su autorización específica.
