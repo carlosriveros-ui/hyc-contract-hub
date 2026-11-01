@@ -1,6 +1,9 @@
 /** @jsxImportSource @revideo/2d/lib */
 // HYC Proyectos — presentación corta de marca (1080×1080, LinkedIn / Instagram).
-// Revideo por regla (CLAUDE.md). Paleta de videos/marcas.json; cifras oficiales de la skill brand-hyc.
+// Revideo por regla (CLAUDE.md). Paleta de videos/marcas.json.
+// Cifras: SOLO datos confirmados por Carlos (1-nov-2026): 201 proyectos, 650.000 m² INTERVENIDOS
+// (no "construidos") y +20 años de experiencia, todos de HYC. NO usar 167 proyectos ni 405.000 m² (descartados),
+// ni sumar m² por categorías (se solapan), ni atribuir estas cifras a Carlos o a Project Leader Lab.
 // Sin logo hasta tener el archivo ORIGINAL (nunca recrearlo ni recolorearlo).
 import { makeProject, createRef, all, sequence, waitFor, tween, easeOutCubic, easeInOutCubic } from "@revideo/core";
 import { makeScene2D, Rect, Txt, Layout } from "@revideo/2d";
@@ -40,9 +43,9 @@ const presentacion = makeScene2D("presentacion-hyc", function* (view) {
 
   // --- 2. Cifras con conteo
   const cifras = [
-    { valor: 167, sufijo: "", texto: "proyectos ejecutados" },
-    { valor: 405000, sufijo: " m²", texto: "intervenidos" },
-    { valor: 15, sufijo: "", prefijo: "+", texto: "años en el mercado" },
+    { valor: 201, sufijo: "", texto: "proyectos" },
+    { valor: 650000, sufijo: " m²", texto: "intervenidos" },
+    { valor: 20, sufijo: "", prefijo: "+", texto: "años de experiencia" },
   ];
   const bloques = cifras.map(() => createRef<Layout>());
   const numeros = cifras.map(() => createRef<Txt>());

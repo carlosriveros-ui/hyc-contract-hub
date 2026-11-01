@@ -72,13 +72,13 @@ No hay conector de CapCut ni Descript: Carlos edita, Claude prepara:
 
 `npx remotion render src/remotion/index.ts <Composición> salida.mp4` (o `npx remotion studio src/remotion/index.ts` para editar; requiere `@remotion/cli@4.0.539`):
 - `PresentacionCarlos` — presentación personal 1:1 (~11,5 s): nombre + cargo → pilares (construcción de campo, gerencia de proyectos, IA aplicada) → frase de cierre + CTA. Textos editables por props.
-- `PresentacionPLL` — presentación de Project Leader Lab 1:1 (~11,5 s): marco dorado que se dibuja + etiqueta → título y bajada → 3 temas numerados → cierre + CTA. Todo centrado (identidad PLL). Textos de prueba: reemplazar por el posicionamiento oficial.
+- `PresentacionPLL` — presentación de Project Leader Lab 1:1 (25 s): marco dorado + etiqueta → pregunta → 3 temas numerados → mensaje de apoyo → nombre + slogan (énfasis serif itálico) + CTA. Textos de la base de marca `videos/marca-pll.md` (slogan = propuesta pendiente de aprobación).
 - `PostMarcaPersonal` / `PostProjectLeader` — frase con firma 1:1 (6 s).
 
 ### 3-D. Video animado con datos (HYC)
 
 Plantillas Revideo listas en `videos/hyc/` (`npm run render -- <nombre>` → `output/<nombre>.mp4`):
-- `presentacion` — presentación de marca 1:1 (~11 s): franjas rojas + nombre → cifras con conteo (167 proyectos · 405.000 m² · +15 años) → cierre rojo "CONSTRUIMOS CONFIANZA" + web.
+- `presentacion` — presentación de marca 1:1 (~11 s): franjas rojas + nombre → cifras con conteo (201 proyectos · 650.000 m² intervenidos · +20 años de experiencia) → cierre rojo "CONSTRUIMOS CONFIANZA" + web.
 - `resumen-contrato` — avance de un contrato 16:9 (cliente, sedes, % de actividades).
 - Texto pequeño sobre negro: en blanco, no en rojo (el rojo sobre `#211F20` no da contraste); rojo para franjas, barras y fondos.
 
@@ -112,6 +112,9 @@ Guion corto (1 idea) → escena Manim → narración ElevenLabs (o voz de Carlos
 ---
 
 ## 6. Marca (resumen; fuente única `videos/marcas.json`)
+
+- **Cifras de HYC (confirmadas por Carlos, 1-nov-2026):** 201 proyectos · 650.000 m² **intervenidos** (nunca "construidos") · +20 años de experiencia. **No usar** 167 proyectos ni 405.000 m² ni los desgloses por categoría. Estas cifras son de HYC: no atribuirlas a Carlos ni a PLL.
+- **Project Leader Lab:** base de marca en `videos/marca-pll.md` (slogan propuesto, voz, pilares, textos). Todo es propuesta hasta que Carlos lo apruebe.
 
 - **HYC**: rojo `#C52026`, negro `#211F20`, blanco. Tipografía Gotham → Montserrat → Arial. Slogan *Construimos Confianza*. **Logo original, nunca recoloreado.** Motivos: franjas verticales rojas, flechas/triángulos. En texto: **HYC**, nunca "H&C".
 - **Carlos Riveros**: fondo `#10100E`, blanco cálido `#F2F0E7`, dorado `#C99B64`. Composición editorial, alineada a la izquierda.

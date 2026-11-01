@@ -34,17 +34,20 @@ export const PRESENTACION_CARLOS_PROPS: PresentacionCarlosProps = {
 
 export const PRESENTACION_PLL = {
   id: "PresentacionPLL",
-  durationInFrames: 345, // 11.5 s
+  durationInFrames: 750, // 25 s
   fps: 30,
   width: 1080,
   height: 1080,
 } as const;
 
-// Textos de prueba: reemplazar por el posicionamiento oficial de Project Leader Lab
+// Textos de la base de marca PLL (1-nov-2026, videos/marca-pll.md).
+// "Lidera proyectos con criterio y propósito" es una PROPUESTA de slogan pendiente de aprobación de Carlos.
 export const PRESENTACION_PLL_PROPS: PresentacionPLLProps = {
-  titulo: "Liderar proyectos se aprende",
-  bajada: "Un laboratorio para gerentes de proyecto",
-  temas: ["Gestión de proyectos", "Liderazgo de equipos", "IA aplicada"],
-  cierre: "Menos teoría. Más proyectos bien entregados.",
-  cta: "Project Leader Lab",
+  pregunta: "¿Qué decisión necesita hoy tu proyecto?",
+  temas: ["Gerencia de proyectos", "Liderazgo de equipos", "IA aplicada con criterio"],
+  apoyo: "Conecta lo que aprendes con lo que necesitas ejecutar.",
+  nombre: "Project Leader Lab",
+  slogan: "Lidera proyectos con criterio y propósito",
+  sloganEnfasis: "criterio y propósito",
+  cta: "Conoce el Lab en projectleaderlab.com",
 };

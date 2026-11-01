@@ -1,6 +1,7 @@
 // Presentación de Project Leader Lab (1080×1080, LinkedIn) → Remotion. Ver REGLA en CONTEXT.md.
 // Identidad PLL (comparte paleta con Carlos, se diferencia por composición): marco dorado,
 // etiqueta "PROJECT LEADER LAB" con tracking amplio, todo centrado. Paleta de videos/marcas.json.
+// Textos: base de marca PLL del 1-nov-2026 (videos/marca-pll.md). El slogan es una PROPUESTA, no aprobado.
 import { AbsoluteFill, Easing, interpolate, Sequence, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import MARCAS from "../../videos/marcas.json";
 
@@ -10,12 +11,17 @@ const MARGEN = 56; // separación del marco al borde
 const GROSOR = 3;
 
 export type PresentacionPLLProps = {
-  titulo: string;
-  bajada: string;
+  pregunta: string;
   temas: string[];
-  cierre: string;
+  apoyo: string;
+  nombre: string;
+  slogan: string;
+  /** Parte del slogan que va en énfasis serif/itálico (debe estar contenida en `slogan`). */
+  sloganEnfasis: string;
   cta: string;
 };
+
+const SERIF = "Georgia, 'Times New Roman', serif";
 
 /** Marco dorado que se dibuja: arriba y abajo crecen desde el centro, luego los lados. */
 function Marco() {
@@ -52,13 +58,11 @@ function useEntrada(retraso = 0) {
 
 const centro: React.CSSProperties = { justifyContent: "center", alignItems: "center", textAlign: "center", padding: 140 };
 
-function Apertura({ titulo, bajada }: Pick<PresentacionPLLProps, "titulo" | "bajada">) {
+function Apertura({ pregunta }: Pick<PresentacionPLLProps, "pregunta">) {
   const a = useEntrada(30);
-  const b = useEntrada(44);
   return (
     <AbsoluteFill style={centro}>
-      <div style={{ fontSize: 96, fontWeight: 800, lineHeight: 1.05, opacity: a, transform: `scale(${0.96 + a * 0.04})` }}>{titulo}</div>
-      <div style={{ marginTop: 36, fontSize: 36, color: P.texto, opacity: b * 0.75 }}>{bajada}</div>
+      <div style={{ fontSize: 88, fontWeight: 800, lineHeight: 1.1, opacity: a, transform: `scale(${0.96 + a * 0.04})` }}>{pregunta}</div>
     </AbsoluteFill>
   );
 }
@@ -81,14 +85,33 @@ function Temas({ temas }: Pick<PresentacionPLLProps, "temas">) {
   );
 }
 
-function Cierre({ cierre, cta }: Pick<PresentacionPLLProps, "cierre" | "cta">) {
+function Apoyo({ apoyo }: Pick<PresentacionPLLProps, "apoyo">) {
   const a = useEntrada(0);
-  const b = useEntrada(20);
   return (
     <AbsoluteFill style={centro}>
-      <div style={{ fontSize: 68, fontWeight: 800, lineHeight: 1.15, opacity: a }}>{cierre}</div>
-      <div style={{ width: 80, height: GROSOR, background: P.acento, margin: "48px 0 32px", opacity: b }} />
-      <div style={{ fontSize: 32, color: P.acento, letterSpacing: 2, opacity: b }}>{cta}</div>
+      <div style={{ width: 80, height: GROSOR, background: P.acento, marginBottom: 48, opacity: a }} />
+      <div style={{ fontSize: 64, fontWeight: 700, lineHeight: 1.2, opacity: a, transform: `translateY(${(1 - a) * 24}px)` }}>{apoyo}</div>
+    </AbsoluteFill>
+  );
+}
+
+function Cierre({ nombre, slogan, sloganEnfasis, cta }: Pick<PresentacionPLLProps, "nombre" | "slogan" | "sloganEnfasis" | "cta">) {
+  const a = useEntrada(0);
+  const b = useEntrada(18);
+  const c = useEntrada(40);
+  const i = sloganEnfasis ? slogan.indexOf(sloganEnfasis) : -1;
+  const partes = i >= 0 ? [slogan.slice(0, i), sloganEnfasis, slogan.slice(i + sloganEnfasis.length)] : [slogan, "", ""];
+  return (
+    <AbsoluteFill style={centro}>
+      <div style={{ fontSize: 84, fontWeight: 800, letterSpacing: 1, opacity: a }}>{nombre}</div>
+      <div style={{ marginTop: 28, fontSize: 48, lineHeight: 1.25, opacity: b }}>
+        {partes[0]}
+        {/* El énfasis va en su propia línea para que no se parta a la mitad */}
+        <span style={{ display: "block", fontFamily: SERIF, fontStyle: "italic", fontWeight: 400, fontSize: 56, color: P.acento, marginTop: 6 }}>{partes[1]}</span>
+        {partes[2]}
+      </div>
+      <div style={{ width: 80, height: GROSOR, background: P.acento, margin: "56px 0 28px", opacity: c }} />
+      <div style={{ fontSize: 32, color: P.texto, opacity: c * 0.85, letterSpacing: 1 }}>{cta}</div>
     </AbsoluteFill>
   );
 }
@@ -103,14 +126,20 @@ export function PresentacionPLL(props: PresentacionPLLProps) {
     <AbsoluteFill style={{ background: P.fondo, color: P.texto, fontFamily: FUENTE, opacity: salida }}>
       <Marco />
       <Etiqueta />
-      <Sequence from={0} durationInFrames={110}>
-        <AbsoluteFill style={{ opacity: fundido(-8, 110) }}><Apertura titulo={props.titulo} bajada={props.bajada} /></AbsoluteFill>
+      {/* ~25 s: pregunta 5 s · temas 7 s · apoyo 5 s · cierre 8 s */}
+      <Sequence from={0} durationInFrames={150}>
+        <AbsoluteFill style={{ opacity: fundido(-8, 150) }}><Apertura pregunta={props.pregunta} /></AbsoluteFill>
       </Sequence>
-      <Sequence from={110} durationInFrames={110}>
-        <AbsoluteFill style={{ opacity: fundido(110, 220) }}><Temas temas={props.temas} /></AbsoluteFill>
+      <Sequence from={150} durationInFrames={210}>
+        <AbsoluteFill style={{ opacity: fundido(150, 360) }}><Temas temas={props.temas} /></AbsoluteFill>
       </Sequence>
-      <Sequence from={220}>
-        <AbsoluteFill style={{ opacity: fundido(220, durationInFrames + 8) }}><Cierre cierre={props.cierre} cta={props.cta} /></AbsoluteFill>
+      <Sequence from={360} durationInFrames={150}>
+        <AbsoluteFill style={{ opacity: fundido(360, 510) }}><Apoyo apoyo={props.apoyo} /></AbsoluteFill>
+      </Sequence>
+      <Sequence from={510}>
+        <AbsoluteFill style={{ opacity: fundido(510, durationInFrames + 8) }}>
+          <Cierre nombre={props.nombre} slogan={props.slogan} sloganEnfasis={props.sloganEnfasis} cta={props.cta} />
+        </AbsoluteFill>
       </Sequence>
     </AbsoluteFill>
   );
