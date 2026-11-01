@@ -68,6 +68,12 @@ No hay conector de CapCut ni Descript: Carlos edita, Claude prepara:
 - Descript: usar Studio Sound, quitar muletillas, *Overdub* solo para correcciones con la voz real de Carlos.
 - CapCut: plantillas de subtítulo animado con colores de marca; no usar stickers/efectos que choquen con la marca HYC.
 
+### 3-F. Plantillas Remotion (Carlos Riveros / PLL)
+
+`npx remotion render src/remotion/index.ts <Composición> salida.mp4` (o `npx remotion studio src/remotion/index.ts` para editar; requiere `@remotion/cli@4.0.539`):
+- `PresentacionCarlos` — presentación personal 1:1 (~11,5 s): nombre + cargo → pilares (construcción de campo, gerencia de proyectos, IA aplicada) → frase de cierre + CTA. Textos editables por props.
+- `PostMarcaPersonal` / `PostProjectLeader` — frase con firma 1:1 (6 s).
+
 ### 3-D. Video animado con datos (HYC)
 
 Plantillas Revideo listas en `videos/hyc/` (`npm run render -- <nombre>` → `output/<nombre>.mp4`):
