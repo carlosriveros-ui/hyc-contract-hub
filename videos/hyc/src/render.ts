@@ -1,6 +1,7 @@
 import { renderVideo } from "@revideo/renderer";
 import * as fs from "fs";
 import * as path from "path";
+import { execFileSync } from "child_process";
 
 // Revideo manda telemetría anónima (PostHog) por defecto; la desactivamos.
 process.env.DISABLE_TELEMETRY = "true";
@@ -17,10 +18,17 @@ const PROYECTOS: Record<string, string> = {
 const FUENTES: Record<string, string[]> = { hablado: ["../producciones/2026-11-presentaciones/fuentes/hyc.mp4"] };
 
 function prepararFuentes(nombre: string) {
+  // ffmpeg incluido con Revideo (@ffmpeg-installer)
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const ffmpeg: string = require("@ffmpeg-installer/ffmpeg").path;
   for (const origen of FUENTES[nombre] ?? []) {
     if (!fs.existsSync(origen)) throw new Error(`Falta la grabación ${origen}`);
     fs.mkdirSync("public", { recursive: true });
-    fs.copyFileSync(origen, path.join("public", path.basename(origen)));
+    const destino = path.join("public", path.basename(origen));
+    // All-intra (-g 1) a 30 fps constantes: el decodificador del navegador puede ir a cualquier cuadro sin
+    // reconstruir los anteriores. Con el GOP original se saltaba cuadros y la imagen quedaba congelada a ratos.
+    execFileSync(ffmpeg, ["-y", "-loglevel", "error", "-i", origen, "-r", "30", "-c:v", "libx264", "-g", "1",
+      "-bf", "0", "-crf", "16", "-pix_fmt", "yuv420p", "-c:a", "copy", destino]);
   }
 }
 
