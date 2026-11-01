@@ -26,7 +26,10 @@ Grabaciones de Carlos (1-nov-2026, verticales) + animación de cada marca. Guion
 - **Sin recorte de silencios:** el habla es continua (pausas < 0,6 s); auto-editor solo produciría saltos. Se recorta el silencio final.
 - **Subtítulos** en caja oscura (camisa blanca de fondo), palabra dicha resaltada (Carlos/PLL: dorado; HYC: blanco pleno, porque el rojo sobre negro no da contraste).
 - **Rótulos** sincronizados con lo que dice Carlos, en la zona del pecho (no tapan la cara) y dentro de la zona segura de Reels (15 % arriba/abajo libre).
-  - HYC: nombre → +20 años / 201 proyectos / 650.000 m² intervenidos → servicios → cierre rojo "Construimos confianza".
+  - HYC (v2, pedido de Carlos: alternar pantalla completa y media página, animar todos los datos):
+    completo (gancho) → media página video arriba: +20 contando + verbos → gráfico completo: 201 y 650.000 m² contando
+    con cuadrícula de m² que se llena → completo → media página: "Cómo trabajamos" con chulos que se dibujan →
+    media página invertida: servicios + "Conversemos" → cierre rojo con las palabras al decirlas.
   - Carlos: nombre y credenciales **tal como las dijo** (Gerente de proyectos · PMP · MBA · Docente de posgrado · Fundador de empresas) → OBRA/GERENCIA/IA (se ilumina el que explica) → "Comenta" → tarjeta final.
   - PLL: marco dorado + etiqueta todo el video → temas 01/02/03 → URL → tarjeta final con el slogan aprobado.
 - **Resolución:** las grabaciones llegaron por WhatsApp a 478×850 y se escalan a 1080×1920 (se ven algo suaves).
