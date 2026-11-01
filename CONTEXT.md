@@ -319,7 +319,7 @@ Paleta de trabajo de la guía visual aprobada. **HEX aproximados, no certificado
   (Carlos: editorial, alineado a la izquierda, línea dorada; PLL: marco dorado, etiqueta "PROJECT LEADER LAB", centrado).
 - **El logo de HYC se usa original, nunca recoloreado.** El rojo `#C52026` es solo para elementos complementarios.
 - Remotion, Revideo, Manim y MoviePy leen los colores de `videos/marcas.json`; no escribir HEX sueltos en el código.
-- La UI de la app (`src/index.css`, `--primary`) todavía usa `#CC0607`; no se cambió.
+- La UI de la app (`src/index.css`, `--primary`) también usa el Rojo HYC `#C52026`.
 
 - **Nunca** hacer videos de HYC con Remotion: Remotion es gratis solo para personas y empresas de ≤3 empleados; HYC usa Revideo para no necesitar licencia de empresa.
 - Revideo vive fuera de la app porque trae React 19 y Vite propios (la app usa React 18 / Vite 5). No importarlo desde `src/`.
