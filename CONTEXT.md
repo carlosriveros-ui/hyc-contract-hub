@@ -292,12 +292,13 @@ Parseo de números: remueve `$`, `.` (miles), `,` → `.` decimal
 
 ---
 
-## REGLA: Videos — Revideo para HYC, Remotion para marca personal, MoviePy para editar grabaciones
+## REGLA: Videos — Revideo para HYC, Remotion para marca personal, Manim para didácticos de ProjectLeader, MoviePy para editar grabaciones
 
 | Marca | Herramienta | Dónde |
 |---|---|---|
 | **HYC Proyectos** (contratos, sedes, informes a clientes, cualquier cosa con la marca HYC) | **Revideo** (MIT) | `videos/hyc/` — proyecto aparte con su propio `package.json` |
 | **Carlos Riveros** y **ProjectLeader** (marca personal, LinkedIn) | **Remotion** | `src/remotion/` + página `/videos` (solo admin) |
+| **ProjectLeader** — animaciones didácticas (conceptos de gestión, curvas, diagramas paso a paso) | **Manim** (Python, MIT) | `videos/explicativos/` |
 | **Todas las marcas** — editar grabaciones reales (obras, visitas, charlas) | **MoviePy** (Python, MIT) | `videos/editor/` |
 
 - Revideo/Remotion = videos **animados generados con código/datos**. MoviePy = **editar video grabado** (unir clips, logo, título, música). Un video animado de HYC puede pasar después por MoviePy para unirlo con grabaciones.
@@ -309,6 +310,10 @@ Parseo de números: remueve `$`, `.` (miles), `,` → `.` decimal
   - Render: `cd videos/hyc && npm run render` → `videos/hyc/output/*.mp4` (ignorado por git). Datos por `variables.datos` en `src/render.ts`.
   - Telemetría desactivada con `DISABLE_TELEMETRY=true` (ya está en `render.ts`).
   - Si Chrome falla al arrancar, usar `PUPPETEER_EXECUTABLE_PATH` apuntando a un `chrome-headless-shell` (Revideo fuerza `--single-process`, que el Chrome normal no soporta en algunos entornos).
+- Manim:
+  - Solo ProjectLeader. Python 3.11+; `cd videos/explicativos && pip install -r requirements.txt` (Linux necesita `libpango1.0-dev libcairo2-dev`; FFmpeg en el PATH).
+  - Sin LaTeX: usar `Text()`, no `MathTex()`, salvo que se instale LaTeX.
+  - Render: `manim -pqm curva_s.py CurvaS`.
 - MoviePy:
   - Instalar: `cd videos/editor && python -m venv .venv && pip install -r requirements.txt` (FFmpeg viene incluido).
   - Usar: `python editar.py --marca hyc|carlos-riveros|projectleader --clips a.mp4 b.mp4 [--titulo ...] [--musica ...] [--formato 16:9|1:1|9:16]`.
