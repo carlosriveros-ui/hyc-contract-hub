@@ -1,7 +1,7 @@
 # Editor de video (MoviePy)
 
 Para editar **grabaciones reales** (obras, visitas, entrevistas) de cualquier marca:
-HYC Proyectos, Carlos Riveros o ProjectLeader. Ver `CONTEXT.md` → "REGLA: Videos".
+HYC Proyectos, Carlos Riveros o Project Leader Lab. Ver `CONTEXT.md` → "REGLA: Videos".
 
 ## Instalación (una vez)
 
@@ -51,5 +51,5 @@ python editar.py --marca carlos-riveros --clips charla.mp4 --formato 9:16 --reco
 Otras opciones: `--formato 16:9|1:1|9:16`, `--titulo`, `--fuente archivo.ttf`, `--musica`,
 `--volumen-musica 0.25`, `--sin-audio-original`. `python editar.py -h` para ver todo.
 
-Logos: `marcas/<hyc|carlos-riveros|projectleader>/logo.png` (PNG transparente).
-Colores en `marcas.py`.
+Logos: `marcas/<hyc|carlos-riveros|projectleader>/logo.png` (PNG transparente, archivo **original**;
+el logo de HYC nunca se recolorea). Colores: `videos/marcas.json` (compartido con las otras herramientas).

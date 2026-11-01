@@ -2,10 +2,11 @@
   "name": "hyc-videos",
   "private": true,
   "version": "0.0.0",
-  "description": "Videos de HYC Proyectos (Revideo). Regla: todo lo de HYC va aquí; Carlos Riveros / ProjectLeader usa Remotion en src/remotion.",
+  "description": "Videos de HYC Proyectos (Revideo). Regla: todo lo de HYC va aqu\u00ed; Carlos Riveros / ProjectLeader usa Remotion en src/remotion.",
   "scripts": {
     "editor": "revideo editor --projectFile ./src/project.tsx",
-    "render": "tsc && node dist/render.js"
+    "render": "tsc && node dist/render.js",
+    "typecheck": "tsc --noEmit --rootDir .. src/project.tsx --jsx react-jsx --jsxImportSource @revideo/2d/lib --resolveJsonModule --esModuleInterop --skipLibCheck --moduleResolution node --module commonjs --target es2020 --strict"
   },
   "dependencies": {
     "@revideo/2d": "0.11.0",

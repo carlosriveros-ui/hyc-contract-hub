@@ -3,7 +3,10 @@
 import { makeProject, createRef, useScene, all, waitFor, easeOutCubic } from "@revideo/core";
 import { makeScene2D, Rect, Txt } from "@revideo/2d";
 
-const HYC_RED = "#CC0607";
+import MARCAS from "../../marcas.json";
+
+// Paleta HYC (videos/marcas.json). El logo de HYC se usa original, nunca recoloreado.
+const { rojo: HYC_ROJO, negro: HYC_NEGRO, blanco: HYC_BLANCO } = MARCAS.hyc;
 
 // Variables por defecto; se sobreescriben desde render.ts (renderVideo({ variables }))
 const DEFAULTS = {
@@ -18,7 +21,7 @@ const resumenContrato = makeScene2D("resumen-contrato", function* (view) {
   const v = { ...DEFAULTS, ...useScene().variables.get("datos", DEFAULTS)() };
   const pct = v.actividadesTotales > 0 ? v.actividadesCompletadas / v.actividadesTotales : 0;
 
-  view.fill(HYC_RED);
+  view.fill(HYC_ROJO);
 
   const titulo = createRef<Txt>();
   const cliente = createRef<Txt>();
@@ -29,13 +32,17 @@ const resumenContrato = makeScene2D("resumen-contrato", function* (view) {
 
   view.add(
     <>
-      <Txt ref={cliente} text={v.cliente} y={-120} fontSize={40} fill="#ffffffcc" fontFamily="Inter, sans-serif" opacity={0} />
-      <Txt ref={titulo} text={v.contrato} y={-20} fontSize={80} fontWeight={800} fill="#fff" fontFamily="Inter, sans-serif" opacity={0} />
-      <Txt ref={resumen} text={`${v.sedes} sedes · ${v.actividadesCompletadas}/${v.actividadesTotales} actividades`} y={-150} fontSize={48} fill="#fff" fontFamily="Inter, sans-serif" opacity={0} />
-      <Rect width={BAR_W} height={48} radius={24} fill="#ffffff33" clip opacity={0} ref={barra}>
-        <Rect x={-BAR_W / 2} offset={[-1, 0]} width={0} height={48} fill="#fff" />
+      <Txt ref={cliente} text={v.cliente} y={-120} fontSize={40} fill={HYC_BLANCO + "cc"} fontFamily="Inter, sans-serif" opacity={0} />
+      <Txt ref={titulo} text={v.contrato} y={-20} fontSize={80} fontWeight={800} fill={HYC_BLANCO} fontFamily="Inter, sans-serif" opacity={0} />
+      <Txt ref={resumen} text={`${v.sedes} sedes · ${v.actividadesCompletadas}/${v.actividadesTotales} actividades`} y={-150} fontSize={48} fill={HYC_BLANCO} fontFamily="Inter, sans-serif" opacity={0} />
+      <Rect width={BAR_W} height={48} radius={24} fill={HYC_BLANCO + "33"} clip opacity={0} ref={barra}>
+        <Rect x={-BAR_W / 2} offset={[-1, 0]} width={0} height={48} fill={HYC_BLANCO} />
       </Rect>
-      <Txt ref={porcentaje} text="0%" y={140} fontSize={96} fontWeight={800} fill="#fff" fontFamily="Inter, sans-serif" opacity={0} />
+      {/* Franja inferior en negro HYC. Si se agrega el logo, usar el archivo original sin recolorear. */}
+      <Rect y={1080 / 2 - 50} width={1920} height={100} fill={HYC_NEGRO}>
+        <Txt text={MARCAS.hyc.nombre} fontSize={32} fontWeight={700} fill={HYC_BLANCO} fontFamily="Inter, sans-serif" />
+      </Rect>
+      <Txt ref={porcentaje} text="0%" y={140} fontSize={96} fontWeight={800} fill={HYC_BLANCO} fontFamily="Inter, sans-serif" opacity={0} />
     </>,
   );
 

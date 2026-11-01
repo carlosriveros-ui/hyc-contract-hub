@@ -1,6 +1,6 @@
-# Animaciones explicativas — ProjectLeader (Manim)
+# Animaciones explicativas — Project Leader Lab (Manim)
 
-Animaciones didácticas para **ProjectLeader** (conceptos de gestión de proyectos dibujándose paso a paso).
+Animaciones didácticas para **Project Leader Lab** (conceptos de gestión de proyectos dibujándose paso a paso).
 Ver `CONTEXT.md` → "REGLA: Videos". No usar para HYC ni para Carlos Riveros.
 
 ## Instalación (una vez)

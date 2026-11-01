@@ -292,16 +292,32 @@ Parseo de números: remueve `$`, `.` (miles), `,` → `.` decimal
 
 ---
 
-## REGLA: Videos — Revideo para HYC, Remotion para marca personal, Manim para didácticos de ProjectLeader, MoviePy para editar grabaciones
+## REGLA: Videos — Revideo para HYC, Remotion para marca personal, Manim para didácticos de Project Leader Lab, MoviePy para editar grabaciones
 
 | Marca | Herramienta | Dónde |
 |---|---|---|
 | **HYC Proyectos** (contratos, sedes, informes a clientes, cualquier cosa con la marca HYC) | **Revideo** (MIT) | `videos/hyc/` — proyecto aparte con su propio `package.json` |
-| **Carlos Riveros** y **ProjectLeader** (marca personal, LinkedIn) | **Remotion** | `src/remotion/` + página `/videos` (solo admin) |
-| **ProjectLeader** — animaciones didácticas (conceptos de gestión, curvas, diagramas paso a paso) | **Manim** (Python, MIT) | `videos/explicativos/` |
+| **Carlos Riveros** y **Project Leader Lab** (marca personal, LinkedIn) | **Remotion** | `src/remotion/` + página `/videos` (solo admin) |
+| **Project Leader Lab** — animaciones didácticas (conceptos de gestión, curvas, diagramas paso a paso) | **Manim** (Python, MIT) | `videos/explicativos/` |
 | **Todas las marcas** — editar grabaciones reales (obras, visitas, charlas) | **MoviePy** (Python, MIT) | `videos/editor/` |
 
 - Revideo/Remotion = videos **animados generados con código/datos**. MoviePy = **editar video grabado** (unir clips, logo, título, música). Un video animado de HYC puede pasar después por MoviePy para unirlo con grabaciones.
+
+### Paleta (fuente única: `videos/marcas.json`)
+
+Paleta de trabajo de la guía visual aprobada. **HEX aproximados, no certificados** por un manual de marca.
+
+| Marca | Colores |
+|---|---|
+| HYC Proyectos | Rojo `#C52026` · Negro `#211F20` · Blanco `#FFFFFF` |
+| Carlos Riveros | Fondo `#10100E` · Blanco cálido `#F2F0E7` · Dorado `#C99B64` |
+| Project Leader Lab (PLL) | Fondo `#10100E` · Blanco cálido `#F2F0E7` · Dorado `#C99B64` |
+
+- Carlos Riveros y PLL **comparten paleta**; se diferencian por identidad y composición
+  (Carlos: editorial, alineado a la izquierda, línea dorada; PLL: marco dorado, etiqueta "PROJECT LEADER LAB", centrado).
+- **El logo de HYC se usa original, nunca recoloreado.** El rojo `#C52026` es solo para elementos complementarios.
+- Remotion, Revideo, Manim y MoviePy leen los colores de `videos/marcas.json`; no escribir HEX sueltos en el código.
+- La UI de la app (`src/index.css`, `--primary`) todavía usa `#CC0607`; no se cambió.
 
 - **Nunca** hacer videos de HYC con Remotion: Remotion es gratis solo para personas y empresas de ≤3 empleados; HYC usa Revideo para no necesitar licencia de empresa.
 - Revideo vive fuera de la app porque trae React 19 y Vite propios (la app usa React 18 / Vite 5). No importarlo desde `src/`.
@@ -311,7 +327,7 @@ Parseo de números: remueve `$`, `.` (miles), `,` → `.` decimal
   - Telemetría desactivada con `DISABLE_TELEMETRY=true` (ya está en `render.ts`).
   - Si Chrome falla al arrancar, usar `PUPPETEER_EXECUTABLE_PATH` apuntando a un `chrome-headless-shell` (Revideo fuerza `--single-process`, que el Chrome normal no soporta en algunos entornos).
 - Manim:
-  - Solo ProjectLeader. Python 3.11+; `cd videos/explicativos && pip install -r requirements.txt` (Linux necesita `libpango1.0-dev libcairo2-dev`; FFmpeg en el PATH).
+  - Solo Project Leader Lab. Python 3.11+; `cd videos/explicativos && pip install -r requirements.txt` (Linux necesita `libpango1.0-dev libcairo2-dev`; FFmpeg en el PATH).
   - Sin LaTeX: usar `Text()`, no `MathTex()`, salvo que se instale LaTeX.
   - Render: `manim -pqm curva_s.py CurvaS`.
 - MoviePy:

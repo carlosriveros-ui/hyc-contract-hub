@@ -131,7 +131,7 @@ def main():
     if a.titulo:
         fondo = ColorClip((ancho, alto), color=hex_a_rgb(marca["color"]), duration=3)
         texto = TextClip(
-            font=a.fuente, text=a.titulo, font_size=int(alto * 0.07), color="white",
+            font=a.fuente, text=a.titulo, font_size=int(alto * 0.07), color=marca["texto"],
             size=(int(ancho * 0.85), None), method="caption", text_align="center", duration=3,
             margin=(0, int(alto * 0.03)),  # evita que MoviePy corte las letras de abajo
         ).with_position("center")

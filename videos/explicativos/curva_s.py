@@ -1,26 +1,31 @@
-"""ProjectLeader — "¿Vas atrasado? Léelo en la curva S" (animación didáctica con Manim).
+"""Project Leader Lab — "¿Vas atrasado? Léelo en la curva S" (animación didáctica con Manim).
 
-Solo para ProjectLeader (ver REGLA: Videos en CONTEXT.md). No usa LaTeX: todo el texto es Text().
+Solo para Project Leader Lab (ver REGLA: Videos en CONTEXT.md). No usa LaTeX: todo el texto es Text().
 
 Render:
   manim -pqm curva_s.py CurvaS          # calidad media, abre el video
   manim -qh --resolution 1080,1080 curva_s.py CurvaS   # cuadrado para LinkedIn
 """
+import json
+from pathlib import Path
+
 import numpy as np
 from manim import (
     DOWN, LEFT, RIGHT, UP, Axes, Create, DashedLine, Dot, FadeIn, FadeOut,
     Scene, Text, Write, VGroup, config,
 )
 
-# TODO: colores oficiales de ProjectLeader
-FONDO = "#111827"
-ACENTO = "#f59e0b"
-PLAN = "#94a3b8"
+# Paleta Project Leader Lab (videos/marcas.json)
+_P = json.loads((Path(__file__).parent.parent / "marcas.json").read_text(encoding="utf-8"))["projectleader"]
+FONDO, TEXTO, ACENTO = _P["fondo"], _P["texto"], _P["acento"]
+SECUNDARIO = "#8C887D"  # gris cálido derivado del blanco cálido, para lo "planeado" y los ejes
+PLAN = SECUNDARIO
 REAL = ACENTO
-ALERTA = "#ef4444"
+ALERTA = "#D9634C"  # solo para señalar el atraso; no es color de marca
 FUENTE = "Inter"  # si no está instalada, Pango usa una de reemplazo
 
 config.background_color = FONDO
+Text.set_default(color=TEXTO)
 
 
 def curva_s(t, k=10, t0=0.5):
@@ -35,11 +40,11 @@ class CurvaS(Scene):
 
         ejes = Axes(
             x_range=[0, 1, 0.25], y_range=[0, 100, 25], x_length=9, y_length=4.8,
-            axis_config={"color": "#475569", "include_numbers": False},
+            axis_config={"color": "#4A4842", "include_numbers": False},
             tips=False,
         ).shift(DOWN * 0.4)
-        lbl_x = Text("Tiempo", font=FUENTE, font_size=22, color="#cbd5e1").next_to(ejes.x_axis, DOWN)
-        lbl_y = Text("% avance", font=FUENTE, font_size=22, color="#cbd5e1").next_to(ejes.y_axis, UP).shift(RIGHT * 0.3)
+        lbl_x = Text("Tiempo", font=FUENTE, font_size=22, color=SECUNDARIO).next_to(ejes.x_axis, DOWN)
+        lbl_y = Text("% avance", font=FUENTE, font_size=22, color=SECUNDARIO).next_to(ejes.y_axis, UP).shift(RIGHT * 0.3)
         self.play(Create(ejes), FadeIn(lbl_x, lbl_y))
 
         plan = ejes.plot(lambda t: curva_s(t), x_range=[0, 1], color=PLAN, stroke_width=4)
@@ -53,8 +58,8 @@ class CurvaS(Scene):
 
         p_plan = ejes.c2p(hoy, curva_s(hoy))
         p_real = ejes.c2p(hoy, curva_s(hoy, k=9, t0=0.6))
-        linea_hoy = DashedLine(ejes.c2p(hoy, 0), ejes.c2p(hoy, 100), color="#64748b")
-        lbl_hoy = Text("Hoy", font=FUENTE, font_size=22, color="#cbd5e1").next_to(linea_hoy, UP, buff=0.1)
+        linea_hoy = DashedLine(ejes.c2p(hoy, 0), ejes.c2p(hoy, 100), color=SECUNDARIO)
+        lbl_hoy = Text("Hoy", font=FUENTE, font_size=22, color=SECUNDARIO).next_to(linea_hoy, UP, buff=0.1)
         self.play(Create(linea_hoy), FadeIn(lbl_hoy), FadeIn(Dot(p_plan, color=PLAN)), FadeIn(Dot(p_real, color=REAL)))
 
         brecha = DashedLine(p_plan, p_real, color=ALERTA, stroke_width=6)
@@ -72,7 +77,7 @@ class CurvaS(Scene):
         self.play(FadeIn(mensaje, shift=UP * 0.2))
         self.wait(2)
 
-        firma = Text("ProjectLeader", font=FUENTE, font_size=30, color=ACENTO, weight="BOLD").to_edge(DOWN, buff=0.2).to_edge(RIGHT)
+        firma = Text("PROJECT LEADER LAB", font=FUENTE, font_size=24, color=ACENTO, weight="BOLD").to_edge(DOWN, buff=0.2).to_edge(RIGHT)
         self.play(FadeIn(firma))
         self.wait(1.5)
         self.play(*[FadeOut(m) for m in self.mobjects])

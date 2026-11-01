@@ -1,4 +1,4 @@
-// Videos de marca personal (Carlos Riveros / ProjectLeader) con Remotion.
+// Videos de marca personal (Carlos Riveros / Project Leader Lab) con Remotion.
 // Los videos de HYC se hacen con Revideo en videos/hyc — ver REGLA en CONTEXT.md.
 import { useState } from "react";
 import { Player } from "@remotion/player";
@@ -18,7 +18,7 @@ export default function Videos() {
               onClick={() => setMarca(m)}
               className={`px-3 py-1 rounded-md text-sm border ${marca === m ? "bg-primary text-primary-foreground border-primary" : "border-border"}`}
             >
-              {m === "carlos-riveros" ? "Carlos Riveros" : "ProjectLeader"}
+              {m === "carlos-riveros" ? "Carlos Riveros" : "Project Leader Lab"}
             </button>
           ))}
         </div>
