@@ -30,4 +30,5 @@ Los videos quedan en `media/videos/...` (ignorado por git). Se pueden pasar por
 
 ## Escenas
 
+- `ia_con_criterio.py` → `IAConCriterio`: "¿Qué parte del informe puede preparar la IA y qué debe validar el responsable?" (1:1, 1080×1080, ~34 s). Pilar IA aplicada; cierre con el slogan aprobado. Ya trae el formato cuadrado: `manim -qh ia_con_criterio.py IAConCriterio`.
 - `curva_s.py` → `CurvaS`: "¿Vas atrasado? Léelo en la curva S" (planeado vs real, ~16 s).
