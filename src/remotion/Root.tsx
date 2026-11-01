@@ -3,7 +3,8 @@ import { Composition } from "remotion";
 import { PostMarcaPersonal } from "./PostMarcaPersonal";
 import { PresentacionCarlos } from "./PresentacionCarlos";
 import { PresentacionPLL } from "./PresentacionPLL";
-import { POST_DEFAULT_PROPS, POST_MARCA_PERSONAL, PRESENTACION_CARLOS, PRESENTACION_CARLOS_PROPS, PRESENTACION_PLL, PRESENTACION_PLL_PROPS } from "./config";
+import { ReelCarlos } from "./ReelCarlos";
+import { POST_DEFAULT_PROPS, POST_MARCA_PERSONAL, PRESENTACION_CARLOS, PRESENTACION_CARLOS_PROPS, PRESENTACION_PLL, PRESENTACION_PLL_PROPS, REEL_CARLOS, REEL_CARLOS_PROPS } from "./config";
 
 export const RemotionRoot = () => (
   <>
@@ -16,5 +17,6 @@ export const RemotionRoot = () => (
     />
     <Composition {...PRESENTACION_CARLOS} component={PresentacionCarlos} defaultProps={PRESENTACION_CARLOS_PROPS} />
     <Composition {...PRESENTACION_PLL} component={PresentacionPLL} defaultProps={PRESENTACION_PLL_PROPS} />
+    <Composition {...REEL_CARLOS} component={ReelCarlos} defaultProps={REEL_CARLOS_PROPS} />
   </>
 );
