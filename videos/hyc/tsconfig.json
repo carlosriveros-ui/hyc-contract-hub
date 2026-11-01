@@ -1,0 +1,14 @@
+{
+  "extends": "@revideo/2d/tsconfig.project.json",
+  "include": [
+    "src/render.ts"
+  ],
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "rootDir": "src"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "_nota": "Paleta de trabajo de la guía visual aprobada. HEX aproximados, no certificados por manual de marca. Fuente única para Remotion, Revideo, Manim y MoviePy. El logo de HYC se usa original, nunca recoloreado; el rojo es solo para elementos complementarios.",
+  "hyc": {
+    "nombre": "HYC Proyectos",
+    "rojo": "#C52026",
+    "negro": "#211F20",
+    "blanco": "#FFFFFF"
+  },
+  "carlos-riveros": {
+    "nombre": "Carlos Riveros",
+    "fondo": "#10100E",
+    "texto": "#F2F0E7",
+    "acento": "#C99B64"
+  },
+  "projectleader": {
+    "nombre": "Project Leader Lab",
+    "fondo": "#10100E",
+    "texto": "#F2F0E7",
+    "acento": "#C99B64"
+  }
+}

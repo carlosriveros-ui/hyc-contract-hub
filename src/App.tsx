@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -18,6 +19,7 @@ import PettyCash from "./pages/admin/PettyCash";
 import ComingSoon from "./pages/ComingSoon";
 import MarcaPersonalHub from "./pages/admin/MarcaPersonal";
 import DataImport from "./pages/admin/DataImport";
+const Videos = lazy(() => import("./pages/admin/Videos"));
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,7 @@ const App = () => (
             <Route path="/caja-menor" element={<RequireAuth roles={["admin", "coordinador", "tecnico"]}><PettyCash /></RequireAuth>} />
             <Route path="/marca-personal" element={<RequireAuth roles={["admin"]}><MarcaPersonalHub /></RequireAuth>} />
             <Route path="/importar" element={<RequireAuth roles={["admin"]}><DataImport /></RequireAuth>} />
+            <Route path="/videos" element={<RequireAuth roles={["admin"]}><Suspense fallback={null}><Videos /></Suspense></RequireAuth>} />
             <Route path="/reportes" element={<RequireAuth roles={["admin"]}><ComingSoon title="Reportes" /></RequireAuth>} />
             <Route path="/configuracion" element={<RequireAuth><ComingSoon title="Configuración" /></RequireAuth>} />
             <Route path="*" element={<NotFound />} />
