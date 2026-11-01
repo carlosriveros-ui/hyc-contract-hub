@@ -1,6 +1,7 @@
 import type { PostMarcaPersonalProps } from "./PostMarcaPersonal";
 import type { PresentacionCarlosProps } from "./PresentacionCarlos";
 import type { PresentacionPLLProps } from "./PresentacionPLL";
+import type { ReelCarlosProps } from "./ReelCarlos";
 
 export const POST_MARCA_PERSONAL = {
   id: "PostMarcaPersonal",
@@ -50,4 +51,25 @@ export const PRESENTACION_PLL_PROPS: PresentacionPLLProps = {
   slogan: "Lidera proyectos con criterio y propósito",
   sloganEnfasis: "criterio y propósito",
   cta: "Conoce el Lab en projectleaderlab.com",
+};
+
+export const REEL_CARLOS = {
+  id: "ReelCarlos",
+  durationInFrames: 810, // 27 s
+  fps: 30,
+  width: 1080,
+  height: 1920, // 9:16 vertical (Reels / Shorts / TikTok)
+} as const;
+
+// Guion de prueba (reglas de video-script-hyc; sin cifras). Textos para aprobación de Carlos.
+export const REEL_CARLOS_PROPS: ReelCarlosProps = {
+  gancho: "El cronograma no se atrasa el último mes.",
+  giro: "Se atrasa el primer día que nadie lo revisa.",
+  puntosTitulo: "Dos hábitos que lo evitan",
+  puntos: ["Compara avance contra plan cada semana.", "Pregunta qué decisión está pendiente, no solo qué porcentaje va."],
+  perspectiva: "En obra, el atraso se ve tarde porque se mide tarde.",
+  pregunta: "¿Cada cuánto revisas el cronograma con tu equipo?",
+  nombre: "Carlos Riveros",
+  cargo: "Gerente de Constructoras · PMP · MBA",
+  cta: "Sígueme para más gestión de proyectos",
 };
