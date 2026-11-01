@@ -9,8 +9,16 @@ Ejemplo:
       --salida salida/sede-norte.mp4
 
 Transiciones: cruzado (por defecto), deslizar, negro, corte.
+
+Para charlas / videos hablando a cámara:
+  python editar.py --marca carlos-riveros --clips charla.mp4 --formato 9:16 \
+      --recortar-silencios --subtitulos
 """
 import argparse
+import shutil
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 from moviepy import (
@@ -27,6 +35,7 @@ from moviepy import (
 )
 
 from marcas import MARCAS
+from subtitulos import clips_subtitulos, guardar_srt, transcribir
 
 FORMATOS = {"16:9": (1920, 1080), "1:1": (1080, 1080), "9:16": (1080, 1920)}
 TRANSICIONES = ("cruzado", "deslizar", "negro", "corte")
@@ -44,6 +53,15 @@ def ajustar(clip, ancho, alto):
     escala = max(ancho / clip.w, alto / clip.h)
     clip = clip.resized(escala)
     return clip.cropped(x_center=clip.w / 2, y_center=clip.h / 2, width=ancho, height=alto)
+
+
+def recortar_silencios(ruta, carpeta, margen):
+    """Quita silencios y tiempos muertos con auto-editor; devuelve la ruta del clip recortado."""
+    exe = shutil.which("auto-editor") or str(Path(sys.executable).parent / "auto-editor")
+    salida = Path(carpeta) / f"{Path(ruta).stem}_recortado.mp4"
+    print(f"Recortando silencios: {ruta}")
+    subprocess.run([exe, str(ruta), "-o", str(salida), "--margin", margen, "--no-open"], check=True)
+    return str(salida)
 
 
 def unir(partes, transicion, duracion, lado):
@@ -99,6 +117,11 @@ def main():
     p.add_argument("--transicion", default="cruzado", choices=TRANSICIONES, help="Entre clips (por defecto: cruzado)")
     p.add_argument("--duracion-transicion", type=float, default=0.8, help="Segundos (por defecto: 0.8)")
     p.add_argument("--lado", default="derecha", choices=LADOS, help="Desde dónde entra el clip con --transicion deslizar")
+    p.add_argument("--recortar-silencios", action="store_true", help="Quita silencios de cada clip con auto-editor")
+    p.add_argument("--margen-silencio", default="0.2s", help="Aire que se deja alrededor de lo hablado (por defecto 0.2s)")
+    p.add_argument("--subtitulos", action="store_true", help="Transcribe con Whisper y quema subtítulos; guarda también un .srt")
+    p.add_argument("--idioma", default="es", help="Idioma del audio para los subtítulos (por defecto es)")
+    p.add_argument("--modelo-whisper", default="small", help="tiny, base, small (por defecto), medium, large-v3")
     a = p.parse_args()
 
     marca = MARCAS[a.marca]
@@ -114,13 +137,30 @@ def main():
         ).with_position("center")
         partes.append(CompositeVideoClip([fondo, texto]))
 
-    for ruta in a.clips:
+    tmp = tempfile.mkdtemp(prefix="editor-")
+    rutas = [recortar_silencios(r, tmp, a.margen_silencio) for r in a.clips] if a.recortar_silencios else a.clips
+
+    for ruta in rutas:
         clip = ajustar(VideoFileClip(ruta), ancho, alto)
         if a.sin_audio_original:
             clip = clip.without_audio()
         partes.append(clip)
 
     video = unir(partes, a.transicion, a.duracion_transicion, a.lado)
+
+    if a.subtitulos:
+        if video.audio is None:
+            print("Aviso: el video no tiene audio; no se generan subtítulos.")
+        else:
+            audio_tmp = str(Path(tmp) / "voz.wav")
+            video.audio.write_audiofile(audio_tmp, fps=16000, nbytes=2, logger=None)
+            print(f"Transcribiendo con Whisper ({a.modelo_whisper}, {a.idioma})...")
+            lineas = transcribir(audio_tmp, a.modelo_whisper, a.idioma)
+            srt = Path(a.salida).with_suffix(".srt")
+            srt.parent.mkdir(parents=True, exist_ok=True)
+            guardar_srt(lineas, srt)
+            print(f"{len(lineas)} líneas de subtítulos · {srt}")
+            video = CompositeVideoClip([video, *clips_subtitulos(lineas, ancho, alto, a.fuente)])
 
     logo_path = Path(marca["logo"])
     if logo_path.exists():
@@ -145,6 +185,8 @@ def main():
     Path(a.salida).parent.mkdir(parents=True, exist_ok=True)
     video.write_videofile(a.salida, fps=30, codec="libx264", audio_codec="aac")
     print(f"Video generado: {a.salida}")
+    video.close()
+    shutil.rmtree(tmp, ignore_errors=True)
 
 
 if __name__ == "__main__":

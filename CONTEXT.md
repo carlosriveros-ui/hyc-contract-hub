@@ -318,6 +318,8 @@ Parseo de números: remueve `$`, `.` (miles), `,` → `.` decimal
   - Instalar: `cd videos/editor && python -m venv .venv && pip install -r requirements.txt` (FFmpeg viene incluido).
   - Usar: `python editar.py --marca hyc|carlos-riveros|projectleader --clips a.mp4 b.mp4 [--titulo ...] [--musica ...] [--formato 16:9|1:1|9:16]`.
   - Logos en `videos/editor/marcas/<marca>/logo.png`, colores en `marcas.py`.
+  - Transiciones: `--transicion cruzado|deslizar|negro|corte`.
+  - Charlas: `--recortar-silencios` (auto-editor) y `--subtitulos` (faster-whisper local, genera también `.srt`).
 - Remotion:
   - Studio: `npm i -D @remotion/cli@4.0.539 && npx remotion studio src/remotion/index.ts`
   - Versiones de `remotion` y `@remotion/*` siempre exactas e iguales entre sí.

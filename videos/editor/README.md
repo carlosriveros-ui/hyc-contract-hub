@@ -32,6 +32,22 @@ Transiciones entre clips (`--transicion`):
 
 Duración con `--duracion-transicion 0.8` (segundos; se limita a la mitad del clip más corto).
 
+## Charlas y videos hablando a cámara
+
+```bash
+python editar.py --marca carlos-riveros --clips charla.mp4 --formato 9:16 --recortar-silencios --subtitulos
+```
+
+- `--recortar-silencios` — **auto-editor** quita silencios y tiempos muertos de cada clip antes de editar.
+  `--margen-silencio 0.2s` controla cuánto aire queda alrededor de lo hablado.
+  La primera vez auto-editor descarga su binario desde GitHub.
+- `--subtitulos` — **faster-whisper** transcribe en tu computador (el audio no sale a internet), quema
+  subtítulos cortos (máx. 6 palabras, blancos con borde negro) y guarda un `.srt` junto al video
+  (útil para subir a LinkedIn/YouTube como subtítulos aparte).
+  `--idioma es` (por defecto) y `--modelo-whisper tiny|base|small|medium|large-v3`
+  (`small` por defecto: buen balance; la primera vez descarga el modelo, ~480 MB).
+  Se transcribe antes de poner la música, para que no interfiera.
+
 Otras opciones: `--formato 16:9|1:1|9:16`, `--titulo`, `--fuente archivo.ttf`, `--musica`,
 `--volumen-musica 0.25`, `--sin-audio-original`. `python editar.py -h` para ver todo.
 
