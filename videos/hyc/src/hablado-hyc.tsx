@@ -21,6 +21,7 @@ type Linea = { inicio: number; fin: number; palabras: { t: string; inicio: numbe
 
 const escena = makeScene2D("hablado-hyc", function* (view) {
   const video = createRef<Video>();
+  // La fuente se convierte a all-intra en render.ts (evita cuadros congelados del decodificador web).
   view.add(<Video ref={video} src={"/hyc.mp4"} width={W} height={H} />);
   video().play();
 
