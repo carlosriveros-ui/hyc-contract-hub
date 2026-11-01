@@ -2,7 +2,8 @@
 import { Composition } from "remotion";
 import { PostMarcaPersonal } from "./PostMarcaPersonal";
 import { PresentacionCarlos } from "./PresentacionCarlos";
-import { POST_DEFAULT_PROPS, POST_MARCA_PERSONAL, PRESENTACION_CARLOS, PRESENTACION_CARLOS_PROPS } from "./config";
+import { PresentacionPLL } from "./PresentacionPLL";
+import { POST_DEFAULT_PROPS, POST_MARCA_PERSONAL, PRESENTACION_CARLOS, PRESENTACION_CARLOS_PROPS, PRESENTACION_PLL, PRESENTACION_PLL_PROPS } from "./config";
 
 export const RemotionRoot = () => (
   <>
@@ -14,5 +15,6 @@ export const RemotionRoot = () => (
       defaultProps={{ ...POST_DEFAULT_PROPS, marca: "projectleader" as const }}
     />
     <Composition {...PRESENTACION_CARLOS} component={PresentacionCarlos} defaultProps={PRESENTACION_CARLOS_PROPS} />
+    <Composition {...PRESENTACION_PLL} component={PresentacionPLL} defaultProps={PRESENTACION_PLL_PROPS} />
   </>
 );

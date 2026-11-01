@@ -72,6 +72,7 @@ No hay conector de CapCut ni Descript: Carlos edita, Claude prepara:
 
 `npx remotion render src/remotion/index.ts <Composición> salida.mp4` (o `npx remotion studio src/remotion/index.ts` para editar; requiere `@remotion/cli@4.0.539`):
 - `PresentacionCarlos` — presentación personal 1:1 (~11,5 s): nombre + cargo → pilares (construcción de campo, gerencia de proyectos, IA aplicada) → frase de cierre + CTA. Textos editables por props.
+- `PresentacionPLL` — presentación de Project Leader Lab 1:1 (~11,5 s): marco dorado que se dibuja + etiqueta → título y bajada → 3 temas numerados → cierre + CTA. Todo centrado (identidad PLL). Textos de prueba: reemplazar por el posicionamiento oficial.
 - `PostMarcaPersonal` / `PostProjectLeader` — frase con firma 1:1 (6 s).
 
 ### 3-D. Video animado con datos (HYC)
