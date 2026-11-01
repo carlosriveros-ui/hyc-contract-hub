@@ -1,0 +1,612 @@
+[
+ {
+  "inicio": 0.0,
+  "fin": 1.96,
+  "palabras": [
+   {
+    "t": "¿Qué",
+    "inicio": 0.0,
+    "fin": 0.9
+   },
+   {
+    "t": "decisión",
+    "inicio": 0.9,
+    "fin": 1.44
+   },
+   {
+    "t": "necesita",
+    "inicio": 1.44,
+    "fin": 1.96
+   }
+  ]
+ },
+ {
+  "inicio": 1.96,
+  "fin": 2.56,
+  "palabras": [
+   {
+    "t": "hoy",
+    "inicio": 1.96,
+    "fin": 2.16
+   },
+   {
+    "t": "tu",
+    "inicio": 2.16,
+    "fin": 2.28
+   },
+   {
+    "t": "proyecto?",
+    "inicio": 2.28,
+    "fin": 2.56
+   }
+  ]
+ },
+ {
+  "inicio": 3.22,
+  "fin": 5.04,
+  "palabras": [
+   {
+    "t": "Liderar",
+    "inicio": 3.22,
+    "fin": 3.7
+   },
+   {
+    "t": "un",
+    "inicio": 3.7,
+    "fin": 3.82
+   },
+   {
+    "t": "proyecto",
+    "inicio": 3.82,
+    "fin": 4.24
+   },
+   {
+    "t": "es",
+    "inicio": 4.24,
+    "fin": 4.6
+   },
+   {
+    "t": "decidir",
+    "inicio": 4.6,
+    "fin": 5.04
+   }
+  ]
+ },
+ {
+  "inicio": 5.04,
+  "fin": 5.74,
+  "palabras": [
+   {
+    "t": "todos",
+    "inicio": 5.04,
+    "fin": 5.3
+   },
+   {
+    "t": "los",
+    "inicio": 5.3,
+    "fin": 5.54
+   },
+   {
+    "t": "días,",
+    "inicio": 5.54,
+    "fin": 5.74
+   }
+  ]
+ },
+ {
+  "inicio": 6.04,
+  "fin": 6.68,
+  "palabras": [
+   {
+    "t": "qué",
+    "inicio": 6.04,
+    "fin": 6.18
+   },
+   {
+    "t": "priorizar,",
+    "inicio": 6.18,
+    "fin": 6.68
+   }
+  ]
+ },
+ {
+  "inicio": 6.98,
+  "fin": 8.06,
+  "palabras": [
+   {
+    "t": "cómo",
+    "inicio": 6.98,
+    "fin": 7.08
+   },
+   {
+    "t": "coordinar",
+    "inicio": 7.08,
+    "fin": 7.62
+   },
+   {
+    "t": "al",
+    "inicio": 7.62,
+    "fin": 7.74
+   },
+   {
+    "t": "equipo,",
+    "inicio": 7.74,
+    "fin": 8.06
+   }
+  ]
+ },
+ {
+  "inicio": 8.66,
+  "fin": 9.6,
+  "palabras": [
+   {
+    "t": "qué",
+    "inicio": 8.66,
+    "fin": 8.86
+   },
+   {
+    "t": "riesgos",
+    "inicio": 8.86,
+    "fin": 9.12
+   },
+   {
+    "t": "atender,",
+    "inicio": 9.12,
+    "fin": 9.6
+   }
+  ]
+ },
+ {
+  "inicio": 10.06,
+  "fin": 11.68,
+  "palabras": [
+   {
+    "t": "por",
+    "inicio": 10.06,
+    "fin": 10.12
+   },
+   {
+    "t": "eso",
+    "inicio": 10.12,
+    "fin": 10.28
+   },
+   {
+    "t": "creé",
+    "inicio": 10.28,
+    "fin": 10.7
+   },
+   {
+    "t": "Project",
+    "inicio": 10.7,
+    "fin": 11.04
+   },
+   {
+    "t": "Leader",
+    "inicio": 11.04,
+    "fin": 11.36
+   },
+   {
+    "t": "Lab.",
+    "inicio": 11.36,
+    "fin": 11.68
+   }
+  ]
+ },
+ {
+  "inicio": 12.26,
+  "fin": 13.4,
+  "palabras": [
+   {
+    "t": "En",
+    "inicio": 12.26,
+    "fin": 12.4
+   },
+   {
+    "t": "el",
+    "inicio": 12.4,
+    "fin": 12.52
+   },
+   {
+    "t": "Lab",
+    "inicio": 12.52,
+    "fin": 12.78
+   },
+   {
+    "t": "conectamos",
+    "inicio": 12.78,
+    "fin": 13.4
+   }
+  ]
+ },
+ {
+  "inicio": 13.4,
+  "fin": 15.74,
+  "palabras": [
+   {
+    "t": "tres",
+    "inicio": 13.4,
+    "fin": 13.72
+   },
+   {
+    "t": "cosas,",
+    "inicio": 13.72,
+    "fin": 14.14
+   },
+   {
+    "t": "gerencia",
+    "inicio": 14.48,
+    "fin": 14.9
+   },
+   {
+    "t": "de",
+    "inicio": 14.9,
+    "fin": 15.04
+   },
+   {
+    "t": "proyectos,",
+    "inicio": 15.04,
+    "fin": 15.74
+   }
+  ]
+ },
+ {
+  "inicio": 15.98,
+  "fin": 17.2,
+  "palabras": [
+   {
+    "t": "liderazgo",
+    "inicio": 15.98,
+    "fin": 16.5
+   },
+   {
+    "t": "de",
+    "inicio": 16.5,
+    "fin": 16.64
+   },
+   {
+    "t": "equipos",
+    "inicio": 16.64,
+    "fin": 17.06
+   },
+   {
+    "t": "e",
+    "inicio": 17.06,
+    "fin": 17.2
+   }
+  ]
+ },
+ {
+  "inicio": 17.2,
+  "fin": 18.24,
+  "palabras": [
+   {
+    "t": "inteligencia",
+    "inicio": 17.2,
+    "fin": 17.66
+   },
+   {
+    "t": "artificial,",
+    "inicio": 17.66,
+    "fin": 18.24
+   }
+  ]
+ },
+ {
+  "inicio": 18.44,
+  "fin": 19.98,
+  "palabras": [
+   {
+    "t": "aplicada",
+    "inicio": 18.44,
+    "fin": 19.3
+   },
+   {
+    "t": "con",
+    "inicio": 19.3,
+    "fin": 19.48
+   },
+   {
+    "t": "criterio,",
+    "inicio": 19.48,
+    "fin": 19.98
+   }
+  ]
+ },
+ {
+  "inicio": 20.48,
+  "fin": 21.94,
+  "palabras": [
+   {
+    "t": "ideas",
+    "inicio": 20.48,
+    "fin": 20.82
+   },
+   {
+    "t": "y",
+    "inicio": 20.82,
+    "fin": 21.02
+   },
+   {
+    "t": "herramientas",
+    "inicio": 21.02,
+    "fin": 21.5
+   },
+   {
+    "t": "que",
+    "inicio": 21.5,
+    "fin": 21.66
+   },
+   {
+    "t": "puedes",
+    "inicio": 21.66,
+    "fin": 21.94
+   }
+  ]
+ },
+ {
+  "inicio": 21.94,
+  "fin": 23.3,
+  "palabras": [
+   {
+    "t": "poner",
+    "inicio": 21.94,
+    "fin": 22.28
+   },
+   {
+    "t": "a",
+    "inicio": 22.28,
+    "fin": 22.44
+   },
+   {
+    "t": "prueba",
+    "inicio": 22.44,
+    "fin": 22.64
+   },
+   {
+    "t": "en",
+    "inicio": 22.64,
+    "fin": 22.82
+   },
+   {
+    "t": "tu",
+    "inicio": 22.82,
+    "fin": 22.88
+   },
+   {
+    "t": "trabajo,",
+    "inicio": 22.88,
+    "fin": 23.3
+   }
+  ]
+ },
+ {
+  "inicio": 23.64,
+  "fin": 25.22,
+  "palabras": [
+   {
+    "t": "revisar",
+    "inicio": 23.64,
+    "fin": 24.14
+   },
+   {
+    "t": "y",
+    "inicio": 24.14,
+    "fin": 24.38
+   },
+   {
+    "t": "adaptar",
+    "inicio": 24.38,
+    "fin": 24.76
+   },
+   {
+    "t": "con",
+    "inicio": 24.76,
+    "fin": 24.88
+   },
+   {
+    "t": "tu",
+    "inicio": 24.88,
+    "fin": 24.98
+   },
+   {
+    "t": "equipo.",
+    "inicio": 24.98,
+    "fin": 25.22
+   }
+  ]
+ },
+ {
+  "inicio": 25.22,
+  "fin": 27.66,
+  "palabras": [
+   {
+    "t": "La",
+    "inicio": 25.22,
+    "fin": 26.12
+   },
+   {
+    "t": "tecnología",
+    "inicio": 26.12,
+    "fin": 26.66
+   },
+   {
+    "t": "amplía",
+    "inicio": 26.66,
+    "fin": 27.38
+   },
+   {
+    "t": "lo",
+    "inicio": 27.38,
+    "fin": 27.54
+   },
+   {
+    "t": "que",
+    "inicio": 27.54,
+    "fin": 27.66
+   }
+  ]
+ },
+ {
+  "inicio": 27.66,
+  "fin": 28.48,
+  "palabras": [
+   {
+    "t": "podemos",
+    "inicio": 27.66,
+    "fin": 27.94
+   },
+   {
+    "t": "analizar,",
+    "inicio": 27.94,
+    "fin": 28.48
+   }
+  ]
+ },
+ {
+  "inicio": 28.76,
+  "fin": 30.32,
+  "palabras": [
+   {
+    "t": "el",
+    "inicio": 28.76,
+    "fin": 28.86
+   },
+   {
+    "t": "criterio",
+    "inicio": 28.86,
+    "fin": 29.44
+   },
+   {
+    "t": "decide",
+    "inicio": 29.44,
+    "fin": 29.84
+   },
+   {
+    "t": "para",
+    "inicio": 29.84,
+    "fin": 30.14
+   },
+   {
+    "t": "qué",
+    "inicio": 30.14,
+    "fin": 30.32
+   }
+  ]
+ },
+ {
+  "inicio": 30.32,
+  "fin": 30.86,
+  "palabras": [
+   {
+    "t": "la",
+    "inicio": 30.32,
+    "fin": 30.46
+   },
+   {
+    "t": "usamos.",
+    "inicio": 30.46,
+    "fin": 30.86
+   }
+  ]
+ },
+ {
+  "inicio": 31.42,
+  "fin": 32.62,
+  "palabras": [
+   {
+    "t": "Project",
+    "inicio": 31.42,
+    "fin": 31.94
+   },
+   {
+    "t": "Leader",
+    "inicio": 31.94,
+    "fin": 32.18
+   },
+   {
+    "t": "Lab.",
+    "inicio": 32.18,
+    "fin": 32.62
+   }
+  ]
+ },
+ {
+  "inicio": 32.62,
+  "fin": 34.38,
+  "palabras": [
+   {
+    "t": "Lidera",
+    "inicio": 32.62,
+    "fin": 33.14
+   },
+   {
+    "t": "proyectos",
+    "inicio": 33.14,
+    "fin": 33.64
+   },
+   {
+    "t": "con",
+    "inicio": 33.64,
+    "fin": 33.78
+   },
+   {
+    "t": "criterio",
+    "inicio": 33.78,
+    "fin": 34.38
+   }
+  ]
+ },
+ {
+  "inicio": 34.38,
+  "fin": 35.18,
+  "palabras": [
+   {
+    "t": "y",
+    "inicio": 34.38,
+    "fin": 34.5
+   },
+   {
+    "t": "propósito.",
+    "inicio": 34.5,
+    "fin": 35.18
+   }
+  ]
+ },
+ {
+  "inicio": 35.78,
+  "fin": 37.2,
+  "palabras": [
+   {
+    "t": "Conoce",
+    "inicio": 35.78,
+    "fin": 36.48
+   },
+   {
+    "t": "el",
+    "inicio": 36.48,
+    "fin": 36.74
+   },
+   {
+    "t": "Lab",
+    "inicio": 36.74,
+    "fin": 37.02
+   },
+   {
+    "t": "en",
+    "inicio": 37.02,
+    "fin": 37.2
+   }
+  ]
+ },
+ {
+  "inicio": 37.2,
+  "fin": 38.74,
+  "palabras": [
+   {
+    "t": "projectleaderlab.com",
+    "inicio": 37.2,
+    "fin": 38.74
+   }
+  ]
+ }
+]

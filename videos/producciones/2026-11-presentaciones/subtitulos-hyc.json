@@ -1,0 +1,663 @@
+[
+ {
+  "inicio": 0.0,
+  "fin": 2.08,
+  "palabras": [
+   {
+    "t": "Un",
+    "inicio": 0.0,
+    "fin": 0.8
+   },
+   {
+    "t": "proyecto",
+    "inicio": 0.8,
+    "fin": 1.12
+   },
+   {
+    "t": "no",
+    "inicio": 1.12,
+    "fin": 1.74
+   },
+   {
+    "t": "se",
+    "inicio": 1.74,
+    "fin": 1.9
+   },
+   {
+    "t": "mide",
+    "inicio": 1.9,
+    "fin": 2.08
+   }
+  ]
+ },
+ {
+  "inicio": 2.08,
+  "fin": 2.94,
+  "palabras": [
+   {
+    "t": "el",
+    "inicio": 2.08,
+    "fin": 2.22
+   },
+   {
+    "t": "día",
+    "inicio": 2.22,
+    "fin": 2.36
+   },
+   {
+    "t": "que",
+    "inicio": 2.36,
+    "fin": 2.52
+   },
+   {
+    "t": "arranca,",
+    "inicio": 2.52,
+    "fin": 2.94
+   }
+  ]
+ },
+ {
+  "inicio": 3.12,
+  "fin": 4.46,
+  "palabras": [
+   {
+    "t": "se",
+    "inicio": 3.12,
+    "fin": 3.22
+   },
+   {
+    "t": "mide",
+    "inicio": 3.22,
+    "fin": 3.4
+   },
+   {
+    "t": "el",
+    "inicio": 3.4,
+    "fin": 3.52
+   },
+   {
+    "t": "día",
+    "inicio": 3.52,
+    "fin": 3.72
+   },
+   {
+    "t": "que",
+    "inicio": 3.72,
+    "fin": 3.9
+   },
+   {
+    "t": "se",
+    "inicio": 3.9,
+    "fin": 4.02
+   },
+   {
+    "t": "entrega.",
+    "inicio": 4.02,
+    "fin": 4.46
+   }
+  ]
+ },
+ {
+  "inicio": 5.0,
+  "fin": 6.5,
+  "palabras": [
+   {
+    "t": "En",
+    "inicio": 5.0,
+    "fin": 5.18
+   },
+   {
+    "t": "HYC",
+    "inicio": 5.18,
+    "fin": 5.4
+   },
+   {
+    "t": "Proyectos",
+    "inicio": 5.4,
+    "fin": 5.94
+   },
+   {
+    "t": "de",
+    "inicio": 5.94,
+    "fin": 6.04
+   },
+   {
+    "t": "Ingeniería",
+    "inicio": 6.04,
+    "fin": 6.5
+   }
+  ]
+ },
+ {
+  "inicio": 6.5,
+  "fin": 7.86,
+  "palabras": [
+   {
+    "t": "llevamos",
+    "inicio": 6.5,
+    "fin": 6.94
+   },
+   {
+    "t": "más",
+    "inicio": 6.94,
+    "fin": 7.16
+   },
+   {
+    "t": "de",
+    "inicio": 7.16,
+    "fin": 7.3
+   },
+   {
+    "t": "20",
+    "inicio": 7.3,
+    "fin": 7.56
+   },
+   {
+    "t": "años",
+    "inicio": 7.56,
+    "fin": 7.86
+   }
+  ]
+ },
+ {
+  "inicio": 7.86,
+  "fin": 8.62,
+  "palabras": [
+   {
+    "t": "construyendo,",
+    "inicio": 7.86,
+    "fin": 8.62
+   }
+  ]
+ },
+ {
+  "inicio": 8.82,
+  "fin": 10.2,
+  "palabras": [
+   {
+    "t": "manteniendo",
+    "inicio": 8.82,
+    "fin": 9.4
+   },
+   {
+    "t": "e",
+    "inicio": 9.4,
+    "fin": 9.62
+   },
+   {
+    "t": "interviniendo",
+    "inicio": 9.62,
+    "fin": 10.2
+   }
+  ]
+ },
+ {
+  "inicio": 10.2,
+  "fin": 11.26,
+  "palabras": [
+   {
+    "t": "proyectos",
+    "inicio": 10.2,
+    "fin": 10.74
+   },
+   {
+    "t": "en",
+    "inicio": 10.74,
+    "fin": 10.86
+   },
+   {
+    "t": "Colombia.",
+    "inicio": 10.86,
+    "fin": 11.26
+   }
+  ]
+ },
+ {
+  "inicio": 11.82,
+  "fin": 15.0,
+  "palabras": [
+   {
+    "t": "Son",
+    "inicio": 11.82,
+    "fin": 12.04
+   },
+   {
+    "t": "201",
+    "inicio": 12.04,
+    "fin": 12.54
+   },
+   {
+    "t": "proyectos",
+    "inicio": 12.54,
+    "fin": 13.5
+   },
+   {
+    "t": "y",
+    "inicio": 13.5,
+    "fin": 13.62
+   },
+   {
+    "t": "650",
+    "inicio": 13.62,
+    "fin": 14.0
+   },
+   {
+    "t": "mil",
+    "inicio": 14.0,
+    "fin": 14.72
+   },
+   {
+    "t": "metros",
+    "inicio": 14.72,
+    "fin": 15.0
+   }
+  ]
+ },
+ {
+  "inicio": 15.0,
+  "fin": 16.26,
+  "palabras": [
+   {
+    "t": "cuadrados",
+    "inicio": 15.0,
+    "fin": 15.52
+   },
+   {
+    "t": "intervenidos.",
+    "inicio": 15.52,
+    "fin": 16.26
+   }
+  ]
+ },
+ {
+  "inicio": 16.94,
+  "fin": 17.82,
+  "palabras": [
+   {
+    "t": "En",
+    "inicio": 16.94,
+    "fin": 17.26
+   },
+   {
+    "t": "este",
+    "inicio": 17.26,
+    "fin": 17.46
+   },
+   {
+    "t": "camino",
+    "inicio": 17.46,
+    "fin": 17.82
+   }
+  ]
+ },
+ {
+  "inicio": 17.82,
+  "fin": 19.26,
+  "palabras": [
+   {
+    "t": "aprendimos",
+    "inicio": 17.82,
+    "fin": 18.58
+   },
+   {
+    "t": "algo",
+    "inicio": 18.58,
+    "fin": 18.88
+   },
+   {
+    "t": "simple.",
+    "inicio": 18.88,
+    "fin": 19.26
+   }
+  ]
+ },
+ {
+  "inicio": 19.88,
+  "fin": 21.88,
+  "palabras": [
+   {
+    "t": "Un",
+    "inicio": 19.88,
+    "fin": 20.0
+   },
+   {
+    "t": "cliente",
+    "inicio": 20.0,
+    "fin": 20.88
+   },
+   {
+    "t": "no",
+    "inicio": 20.88,
+    "fin": 21.0
+   },
+   {
+    "t": "compra",
+    "inicio": 21.0,
+    "fin": 21.36
+   },
+   {
+    "t": "una",
+    "inicio": 21.36,
+    "fin": 21.56
+   },
+   {
+    "t": "obra,",
+    "inicio": 21.56,
+    "fin": 21.88
+   }
+  ]
+ },
+ {
+  "inicio": 22.08,
+  "fin": 23.22,
+  "palabras": [
+   {
+    "t": "compra",
+    "inicio": 22.08,
+    "fin": 22.3
+   },
+   {
+    "t": "la",
+    "inicio": 22.3,
+    "fin": 22.48
+   },
+   {
+    "t": "tranquilidad",
+    "inicio": 22.48,
+    "fin": 23.22
+   }
+  ]
+ },
+ {
+  "inicio": 23.22,
+  "fin": 24.54,
+  "palabras": [
+   {
+    "t": "de",
+    "inicio": 23.22,
+    "fin": 23.46
+   },
+   {
+    "t": "que",
+    "inicio": 23.46,
+    "fin": 23.56
+   },
+   {
+    "t": "se",
+    "inicio": 23.56,
+    "fin": 23.7
+   },
+   {
+    "t": "va",
+    "inicio": 23.7,
+    "fin": 23.9
+   },
+   {
+    "t": "a",
+    "inicio": 23.9,
+    "fin": 24.06
+   },
+   {
+    "t": "cumplir.",
+    "inicio": 24.06,
+    "fin": 24.54
+   }
+  ]
+ },
+ {
+  "inicio": 24.54,
+  "fin": 26.64,
+  "palabras": [
+   {
+    "t": "Por",
+    "inicio": 24.54,
+    "fin": 25.16
+   },
+   {
+    "t": "eso",
+    "inicio": 25.16,
+    "fin": 25.38
+   },
+   {
+    "t": "trabajamos",
+    "inicio": 25.38,
+    "fin": 25.98
+   },
+   {
+    "t": "con",
+    "inicio": 25.98,
+    "fin": 26.2
+   },
+   {
+    "t": "procesos",
+    "inicio": 26.2,
+    "fin": 26.64
+   }
+  ]
+ },
+ {
+  "inicio": 26.64,
+  "fin": 27.98,
+  "palabras": [
+   {
+    "t": "de",
+    "inicio": 26.64,
+    "fin": 26.72
+   },
+   {
+    "t": "calidad",
+    "inicio": 26.72,
+    "fin": 27.08
+   },
+   {
+    "t": "certificados",
+    "inicio": 27.08,
+    "fin": 27.98
+   }
+  ]
+ },
+ {
+  "inicio": 27.98,
+  "fin": 29.22,
+  "palabras": [
+   {
+    "t": "y",
+    "inicio": 27.98,
+    "fin": 28.28
+   },
+   {
+    "t": "con",
+    "inicio": 28.28,
+    "fin": 28.42
+   },
+   {
+    "t": "un",
+    "inicio": 28.42,
+    "fin": 28.54
+   },
+   {
+    "t": "equipo",
+    "inicio": 28.54,
+    "fin": 28.84
+   },
+   {
+    "t": "que",
+    "inicio": 28.84,
+    "fin": 29.1
+   },
+   {
+    "t": "da",
+    "inicio": 29.1,
+    "fin": 29.22
+   }
+  ]
+ },
+ {
+  "inicio": 29.22,
+  "fin": 30.1,
+  "palabras": [
+   {
+    "t": "la",
+    "inicio": 29.22,
+    "fin": 29.34
+   },
+   {
+    "t": "cara",
+    "inicio": 29.34,
+    "fin": 29.58
+   },
+   {
+    "t": "en",
+    "inicio": 29.58,
+    "fin": 29.68
+   },
+   {
+    "t": "la",
+    "inicio": 29.68,
+    "fin": 29.78
+   },
+   {
+    "t": "obra,",
+    "inicio": 29.78,
+    "fin": 30.1
+   }
+  ]
+ },
+ {
+  "inicio": 30.46,
+  "fin": 31.66,
+  "palabras": [
+   {
+    "t": "no",
+    "inicio": 30.46,
+    "fin": 30.66
+   },
+   {
+    "t": "solo",
+    "inicio": 30.66,
+    "fin": 30.92
+   },
+   {
+    "t": "en",
+    "inicio": 30.92,
+    "fin": 31.04
+   },
+   {
+    "t": "la",
+    "inicio": 31.04,
+    "fin": 31.12
+   },
+   {
+    "t": "propuesta.",
+    "inicio": 31.12,
+    "fin": 31.66
+   }
+  ]
+ },
+ {
+  "inicio": 32.62,
+  "fin": 33.74,
+  "palabras": [
+   {
+    "t": "Si",
+    "inicio": 32.62,
+    "fin": 32.74
+   },
+   {
+    "t": "tienes",
+    "inicio": 32.74,
+    "fin": 33.06
+   },
+   {
+    "t": "un",
+    "inicio": 33.06,
+    "fin": 33.22
+   },
+   {
+    "t": "proyecto",
+    "inicio": 33.22,
+    "fin": 33.44
+   },
+   {
+    "t": "de",
+    "inicio": 33.44,
+    "fin": 33.74
+   }
+  ]
+ },
+ {
+  "inicio": 33.74,
+  "fin": 34.5,
+  "palabras": [
+   {
+    "t": "construcción,",
+    "inicio": 33.74,
+    "fin": 34.5
+   }
+  ]
+ },
+ {
+  "inicio": 34.66,
+  "fin": 36.4,
+  "palabras": [
+   {
+    "t": "mantenimiento",
+    "inicio": 34.66,
+    "fin": 35.22
+   },
+   {
+    "t": "o",
+    "inicio": 35.22,
+    "fin": 35.62
+   },
+   {
+    "t": "interventoría,",
+    "inicio": 35.62,
+    "fin": 36.4
+   }
+  ]
+ },
+ {
+  "inicio": 36.64,
+  "fin": 37.24,
+  "palabras": [
+   {
+    "t": "conversemos.",
+    "inicio": 36.64,
+    "fin": 37.24
+   }
+  ]
+ },
+ {
+  "inicio": 37.72,
+  "fin": 39.1,
+  "palabras": [
+   {
+    "t": "HYC",
+    "inicio": 37.72,
+    "fin": 38.24
+   },
+   {
+    "t": "Proyectos.",
+    "inicio": 38.24,
+    "fin": 39.1
+   }
+  ]
+ },
+ {
+  "inicio": 39.1,
+  "fin": 40.3,
+  "palabras": [
+   {
+    "t": "Construimos",
+    "inicio": 39.1,
+    "fin": 39.66
+   },
+   {
+    "t": "confianza.",
+    "inicio": 39.66,
+    "fin": 40.3
+   }
+  ]
+ }
+]

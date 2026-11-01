@@ -6,9 +6,10 @@
   "scripts": {
     "editor": "revideo editor --projectFile ./src/project.tsx",
     "render": "tsc && node dist/render.js",
-    "typecheck": "tsc --noEmit --rootDir .. src/project.tsx src/presentacion.tsx --jsx react-jsx --jsxImportSource @revideo/2d/lib --resolveJsonModule --esModuleInterop --skipLibCheck --moduleResolution node --module commonjs --target es2020 --strict",
+    "typecheck": "tsc --noEmit --rootDir .. src/project.tsx src/presentacion.tsx src/hablado-hyc.tsx --jsx react-jsx --jsxImportSource @revideo/2d/lib --resolveJsonModule --esModuleInterop --skipLibCheck --moduleResolution node --module commonjs --target es2020 --strict",
     "render:presentacion": "tsc && node dist/render.js presentacion",
-    "editor:presentacion": "revideo editor --projectFile ./src/presentacion.tsx"
+    "editor:presentacion": "revideo editor --projectFile ./src/presentacion.tsx",
+    "render:hablado": "tsc && node dist/render.js hablado"
   },
   "dependencies": {
     "@revideo/2d": "0.11.0",

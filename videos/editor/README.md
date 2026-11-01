@@ -47,6 +47,7 @@ python editar.py --marca carlos-riveros --clips charla.mp4 --formato 9:16 --reco
   `--idioma es` (por defecto) y `--modelo-whisper tiny|base|small|medium|large-v3`
   (`small` por defecto: buen balance; la primera vez descarga el modelo, ~480 MB).
   Se transcribe antes de poner la música, para que no interfiera.
+  `--modelo-whisper` también acepta la **ruta a un modelo local** (carpeta CTranslate2), útil si no hay acceso a HuggingFace.
 
 Otras opciones: `--formato 16:9|1:1|9:16`, `--titulo`, `--fuente archivo.ttf`, `--musica`,
 `--volumen-musica 0.25`, `--sin-audio-original`. `python editar.py -h` para ver todo.
