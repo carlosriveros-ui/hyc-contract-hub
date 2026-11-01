@@ -41,7 +41,7 @@ export const PRESENTACION_PLL = {
 } as const;
 
 // Textos de la base de marca PLL (1-nov-2026, videos/marca-pll.md).
-// "Lidera proyectos con criterio y propósito" es una PROPUESTA de slogan pendiente de aprobación de Carlos.
+// Slogan "Lidera proyectos con criterio y propósito": APROBADO por Carlos (1-nov-2026).
 export const PRESENTACION_PLL_PROPS: PresentacionPLLProps = {
   pregunta: "¿Qué decisión necesita hoy tu proyecto?",
   temas: ["Gerencia de proyectos", "Liderazgo de equipos", "IA aplicada con criterio"],
