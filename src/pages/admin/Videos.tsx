@@ -1,26 +1,35 @@
+// Videos de marca personal (Carlos Riveros / ProjectLeader) con Remotion.
+// Los videos de HYC se hacen con Revideo en videos/hyc — ver REGLA en CONTEXT.md.
+import { useState } from "react";
 import { Player } from "@remotion/player";
 import { AppShell } from "@/components/AppShell";
-import { ResumenContrato, RESUMEN_CONTRATO } from "@/remotion/ResumenContrato";
+import { PostMarcaPersonal, type Marca } from "@/remotion/PostMarcaPersonal";
+import { POST_DEFAULT_PROPS, POST_MARCA_PERSONAL } from "@/remotion/config";
 
 export default function Videos() {
+  const [marca, setMarca] = useState<Marca>("carlos-riveros");
   return (
-    <AppShell title="Videos">
-      <div className="bg-surface border border-border rounded-lg shadow-card p-4">
-        <h2 className="text-lg font-bold mb-3">Resumen de contrato (ejemplo)</h2>
+    <AppShell title="Videos · Marca Personal">
+      <div className="bg-surface border border-border rounded-lg shadow-card p-4 max-w-xl">
+        <div className="flex gap-2 mb-3">
+          {(["carlos-riveros", "projectleader"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMarca(m)}
+              className={`px-3 py-1 rounded-md text-sm border ${marca === m ? "bg-primary text-primary-foreground border-primary" : "border-border"}`}
+            >
+              {m === "carlos-riveros" ? "Carlos Riveros" : "ProjectLeader"}
+            </button>
+          ))}
+        </div>
         <Player
-          component={ResumenContrato}
-          inputProps={{
-            cliente: "Cliente de ejemplo",
-            contrato: "Mantenimiento integral 2026",
-            sedes: 12,
-            actividadesCompletadas: 87,
-            actividadesTotales: 120,
-          }}
-          durationInFrames={RESUMEN_CONTRATO.durationInFrames}
-          fps={RESUMEN_CONTRATO.fps}
-          compositionWidth={RESUMEN_CONTRATO.width}
-          compositionHeight={RESUMEN_CONTRATO.height}
-          style={{ width: "100%", aspectRatio: "16 / 9" }}
+          component={PostMarcaPersonal}
+          inputProps={{ ...POST_DEFAULT_PROPS, marca }}
+          durationInFrames={POST_MARCA_PERSONAL.durationInFrames}
+          fps={POST_MARCA_PERSONAL.fps}
+          compositionWidth={POST_MARCA_PERSONAL.width}
+          compositionHeight={POST_MARCA_PERSONAL.height}
+          style={{ width: "100%", aspectRatio: "1 / 1" }}
           controls
           loop
         />

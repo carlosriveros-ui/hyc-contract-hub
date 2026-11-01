@@ -292,6 +292,26 @@ Parseo de números: remueve `$`, `.` (miles), `,` → `.` decimal
 
 ---
 
+## REGLA: Videos — Revideo para HYC, Remotion para marca personal
+
+| Marca | Herramienta | Dónde |
+|---|---|---|
+| **HYC Proyectos** (contratos, sedes, informes a clientes, cualquier cosa con la marca HYC) | **Revideo** (MIT) | `videos/hyc/` — proyecto aparte con su propio `package.json` |
+| **Carlos Riveros** y **ProjectLeader** (marca personal, LinkedIn) | **Remotion** | `src/remotion/` + página `/videos` (solo admin) |
+
+- **Nunca** hacer videos de HYC con Remotion: Remotion es gratis solo para personas y empresas de ≤3 empleados; HYC usa Revideo para no necesitar licencia de empresa.
+- Revideo vive fuera de la app porque trae React 19 y Vite propios (la app usa React 18 / Vite 5). No importarlo desde `src/`.
+- Revideo:
+  - Editor: `cd videos/hyc && npm install && npm run editor`
+  - Render: `cd videos/hyc && npm run render` → `videos/hyc/output/*.mp4` (ignorado por git). Datos por `variables.datos` en `src/render.ts`.
+  - Telemetría desactivada con `DISABLE_TELEMETRY=true` (ya está en `render.ts`).
+  - Si Chrome falla al arrancar, usar `PUPPETEER_EXECUTABLE_PATH` apuntando a un `chrome-headless-shell` (Revideo fuerza `--single-process`, que el Chrome normal no soporta en algunos entornos).
+- Remotion:
+  - Studio: `npm i -D @remotion/cli@4.0.539 && npx remotion studio src/remotion/index.ts`
+  - Versiones de `remotion` y `@remotion/*` siempre exactas e iguales entre sí.
+
+---
+
 ## Comandos Git
 
 ```bash

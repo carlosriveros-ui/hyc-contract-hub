@@ -24,7 +24,7 @@ const navByRole: Record<Role, NavItem[]> = {
     { to: "/importar", label: "Importar Datos", icon: Upload },
     { to: "/reportes", label: "Reportes", icon: FileBarChart },
     { to: "/marca-personal", label: "Marca Personal", icon: Sparkles },
-    { to: "/videos", label: "Videos", icon: Clapperboard },
+    { to: "/videos", label: "Videos (Marca Personal)", icon: Clapperboard },
   ],
   coordinador: [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },
