@@ -1,0 +1,881 @@
+[
+ {
+  "inicio": 0.0,
+  "fin": 2.36,
+  "palabras": [
+   {
+    "t": "He",
+    "inicio": 0.0,
+    "fin": 0.82
+   },
+   {
+    "t": "visto",
+    "inicio": 0.82,
+    "fin": 1.12
+   },
+   {
+    "t": "proyectos",
+    "inicio": 1.12,
+    "fin": 1.94
+   },
+   {
+    "t": "con",
+    "inicio": 1.94,
+    "fin": 2.12
+   },
+   {
+    "t": "buena",
+    "inicio": 2.12,
+    "fin": 2.36
+   }
+  ]
+ },
+ {
+  "inicio": 2.36,
+  "fin": 3.8,
+  "palabras": [
+   {
+    "t": "técnica",
+    "inicio": 2.36,
+    "fin": 2.74
+   },
+   {
+    "t": "fallar",
+    "inicio": 2.74,
+    "fin": 3.24
+   },
+   {
+    "t": "por",
+    "inicio": 3.24,
+    "fin": 3.48
+   },
+   {
+    "t": "una",
+    "inicio": 3.48,
+    "fin": 3.64
+   },
+   {
+    "t": "sola",
+    "inicio": 3.64,
+    "fin": 3.8
+   }
+  ]
+ },
+ {
+  "inicio": 3.8,
+  "fin": 4.2,
+  "palabras": [
+   {
+    "t": "razón:",
+    "inicio": 3.8,
+    "fin": 4.2
+   }
+  ]
+ },
+ {
+  "inicio": 5.02,
+  "fin": 6.52,
+  "palabras": [
+   {
+    "t": "cómo",
+    "inicio": 5.02,
+    "fin": 5.3
+   },
+   {
+    "t": "se",
+    "inicio": 5.3,
+    "fin": 5.46
+   },
+   {
+    "t": "tomaron",
+    "inicio": 5.46,
+    "fin": 5.78
+   },
+   {
+    "t": "las",
+    "inicio": 5.78,
+    "fin": 5.94
+   },
+   {
+    "t": "decisiones.",
+    "inicio": 5.94,
+    "fin": 6.52
+   }
+  ]
+ },
+ {
+  "inicio": 6.54,
+  "fin": 7.38,
+  "palabras": [
+   {
+    "t": "Soy",
+    "inicio": 6.54,
+    "fin": 6.68
+   },
+   {
+    "t": "Carlos",
+    "inicio": 6.68,
+    "fin": 6.9
+   },
+   {
+    "t": "Riveros,",
+    "inicio": 6.9,
+    "fin": 7.38
+   }
+  ]
+ },
+ {
+  "inicio": 7.52,
+  "fin": 8.68,
+  "palabras": [
+   {
+    "t": "gerente",
+    "inicio": 7.52,
+    "fin": 7.78
+   },
+   {
+    "t": "de",
+    "inicio": 7.78,
+    "fin": 7.94
+   },
+   {
+    "t": "proyectos,",
+    "inicio": 7.94,
+    "fin": 8.68
+   }
+  ]
+ },
+ {
+  "inicio": 9.12,
+  "fin": 10.14,
+  "palabras": [
+   {
+    "t": "fundador",
+    "inicio": 9.12,
+    "fin": 9.54
+   },
+   {
+    "t": "de",
+    "inicio": 9.54,
+    "fin": 9.7
+   },
+   {
+    "t": "empresas,",
+    "inicio": 9.7,
+    "fin": 10.14
+   }
+  ]
+ },
+ {
+  "inicio": 10.68,
+  "fin": 12.3,
+  "palabras": [
+   {
+    "t": "PMP",
+    "inicio": 10.68,
+    "fin": 11.32
+   },
+   {
+    "t": "certificado,",
+    "inicio": 11.32,
+    "fin": 12.3
+   }
+  ]
+ },
+ {
+  "inicio": 12.54,
+  "fin": 14.48,
+  "palabras": [
+   {
+    "t": "MBA",
+    "inicio": 12.54,
+    "fin": 12.78
+   },
+   {
+    "t": "y",
+    "inicio": 12.78,
+    "fin": 13.44
+   },
+   {
+    "t": "docente",
+    "inicio": 13.44,
+    "fin": 13.84
+   },
+   {
+    "t": "de",
+    "inicio": 13.84,
+    "fin": 14.0
+   },
+   {
+    "t": "posgrados",
+    "inicio": 14.0,
+    "fin": 14.48
+   }
+  ]
+ },
+ {
+  "inicio": 14.48,
+  "fin": 15.72,
+  "palabras": [
+   {
+    "t": "en",
+    "inicio": 14.48,
+    "fin": 14.68
+   },
+   {
+    "t": "gerencia",
+    "inicio": 14.68,
+    "fin": 14.96
+   },
+   {
+    "t": "de",
+    "inicio": 14.96,
+    "fin": 15.12
+   },
+   {
+    "t": "proyectos.",
+    "inicio": 15.12,
+    "fin": 15.72
+   }
+  ]
+ },
+ {
+  "inicio": 16.2,
+  "fin": 17.48,
+  "palabras": [
+   {
+    "t": "Trabajo",
+    "inicio": 16.2,
+    "fin": 16.72
+   },
+   {
+    "t": "donde",
+    "inicio": 16.72,
+    "fin": 16.94
+   },
+   {
+    "t": "se",
+    "inicio": 16.94,
+    "fin": 17.14
+   },
+   {
+    "t": "cruzan",
+    "inicio": 17.14,
+    "fin": 17.48
+   }
+  ]
+ },
+ {
+  "inicio": 17.48,
+  "fin": 18.98,
+  "palabras": [
+   {
+    "t": "tres",
+    "inicio": 17.48,
+    "fin": 17.74
+   },
+   {
+    "t": "mundos,",
+    "inicio": 17.74,
+    "fin": 18.28
+   },
+   {
+    "t": "la",
+    "inicio": 18.48,
+    "fin": 18.58
+   },
+   {
+    "t": "obra,",
+    "inicio": 18.58,
+    "fin": 18.98
+   }
+  ]
+ },
+ {
+  "inicio": 19.18,
+  "fin": 20.14,
+  "palabras": [
+   {
+    "t": "la",
+    "inicio": 19.18,
+    "fin": 19.22
+   },
+   {
+    "t": "gerencia",
+    "inicio": 19.22,
+    "fin": 19.52
+   },
+   {
+    "t": "de",
+    "inicio": 19.52,
+    "fin": 19.7
+   },
+   {
+    "t": "proyectos",
+    "inicio": 19.7,
+    "fin": 20.14
+   }
+  ]
+ },
+ {
+  "inicio": 20.14,
+  "fin": 21.26,
+  "palabras": [
+   {
+    "t": "y",
+    "inicio": 20.14,
+    "fin": 20.24
+   },
+   {
+    "t": "la",
+    "inicio": 20.24,
+    "fin": 20.34
+   },
+   {
+    "t": "inteligencia",
+    "inicio": 20.34,
+    "fin": 20.76
+   },
+   {
+    "t": "artificial.",
+    "inicio": 20.76,
+    "fin": 21.26
+   }
+  ]
+ },
+ {
+  "inicio": 22.16,
+  "fin": 23.64,
+  "palabras": [
+   {
+    "t": "La",
+    "inicio": 22.16,
+    "fin": 22.36
+   },
+   {
+    "t": "obra",
+    "inicio": 22.36,
+    "fin": 22.5
+   },
+   {
+    "t": "me",
+    "inicio": 22.5,
+    "fin": 22.64
+   },
+   {
+    "t": "enseñó",
+    "inicio": 22.64,
+    "fin": 23.1
+   },
+   {
+    "t": "que",
+    "inicio": 23.1,
+    "fin": 23.28
+   },
+   {
+    "t": "el",
+    "inicio": 23.28,
+    "fin": 23.4
+   },
+   {
+    "t": "plan",
+    "inicio": 23.4,
+    "fin": 23.64
+   }
+  ]
+ },
+ {
+  "inicio": 23.64,
+  "fin": 24.78,
+  "palabras": [
+   {
+    "t": "cambia",
+    "inicio": 23.64,
+    "fin": 24.16
+   },
+   {
+    "t": "todos",
+    "inicio": 24.16,
+    "fin": 24.34
+   },
+   {
+    "t": "los",
+    "inicio": 24.34,
+    "fin": 24.58
+   },
+   {
+    "t": "días,",
+    "inicio": 24.58,
+    "fin": 24.78
+   }
+  ]
+ },
+ {
+  "inicio": 25.08,
+  "fin": 26.3,
+  "palabras": [
+   {
+    "t": "la",
+    "inicio": 25.08,
+    "fin": 25.2
+   },
+   {
+    "t": "gerencia",
+    "inicio": 25.2,
+    "fin": 25.72
+   },
+   {
+    "t": "que",
+    "inicio": 25.72,
+    "fin": 25.98
+   },
+   {
+    "t": "alguien",
+    "inicio": 25.98,
+    "fin": 26.3
+   }
+  ]
+ },
+ {
+  "inicio": 26.3,
+  "fin": 27.86,
+  "palabras": [
+   {
+    "t": "tiene",
+    "inicio": 26.3,
+    "fin": 26.66
+   },
+   {
+    "t": "que",
+    "inicio": 26.66,
+    "fin": 26.88
+   },
+   {
+    "t": "decidir",
+    "inicio": 26.88,
+    "fin": 27.38
+   },
+   {
+    "t": "con",
+    "inicio": 27.38,
+    "fin": 27.52
+   },
+   {
+    "t": "información",
+    "inicio": 27.52,
+    "fin": 27.86
+   }
+  ]
+ },
+ {
+  "inicio": 27.86,
+  "fin": 28.52,
+  "palabras": [
+   {
+    "t": "incompleta.",
+    "inicio": 27.86,
+    "fin": 28.52
+   }
+  ]
+ },
+ {
+  "inicio": 29.36,
+  "fin": 29.96,
+  "palabras": [
+   {
+    "t": "Y",
+    "inicio": 29.36,
+    "fin": 29.44
+   },
+   {
+    "t": "la",
+    "inicio": 29.44,
+    "fin": 29.54
+   },
+   {
+    "t": "inteligencia",
+    "inicio": 29.54,
+    "fin": 29.96
+   }
+  ]
+ },
+ {
+  "inicio": 29.96,
+  "fin": 31.2,
+  "palabras": [
+   {
+    "t": "artificial",
+    "inicio": 29.96,
+    "fin": 30.56
+   },
+   {
+    "t": "hoy",
+    "inicio": 30.56,
+    "fin": 30.84
+   },
+   {
+    "t": "nos",
+    "inicio": 30.84,
+    "fin": 30.98
+   },
+   {
+    "t": "ayuda",
+    "inicio": 30.98,
+    "fin": 31.2
+   }
+  ]
+ },
+ {
+  "inicio": 31.2,
+  "fin": 32.02,
+  "palabras": [
+   {
+    "t": "a",
+    "inicio": 31.2,
+    "fin": 31.4
+   },
+   {
+    "t": "preparar",
+    "inicio": 31.4,
+    "fin": 31.84
+   },
+   {
+    "t": "esa",
+    "inicio": 31.84,
+    "fin": 32.02
+   }
+  ]
+ },
+ {
+  "inicio": 32.02,
+  "fin": 33.08,
+  "palabras": [
+   {
+    "t": "información",
+    "inicio": 32.02,
+    "fin": 32.42
+   },
+   {
+    "t": "más",
+    "inicio": 32.42,
+    "fin": 32.76
+   },
+   {
+    "t": "rápido,",
+    "inicio": 32.76,
+    "fin": 33.08
+   }
+  ]
+ },
+ {
+  "inicio": 33.46,
+  "fin": 34.62,
+  "palabras": [
+   {
+    "t": "pero",
+    "inicio": 33.46,
+    "fin": 33.76
+   },
+   {
+    "t": "la",
+    "inicio": 33.76,
+    "fin": 33.92
+   },
+   {
+    "t": "decisión",
+    "inicio": 33.92,
+    "fin": 34.36
+   },
+   {
+    "t": "sigue",
+    "inicio": 34.36,
+    "fin": 34.62
+   }
+  ]
+ },
+ {
+  "inicio": 34.62,
+  "fin": 35.34,
+  "palabras": [
+   {
+    "t": "siendo",
+    "inicio": 34.62,
+    "fin": 34.94
+   },
+   {
+    "t": "nuestra.",
+    "inicio": 34.94,
+    "fin": 35.34
+   }
+  ]
+ },
+ {
+  "inicio": 36.02,
+  "fin": 37.64,
+  "palabras": [
+   {
+    "t": "Aquí",
+    "inicio": 36.02,
+    "fin": 36.22
+   },
+   {
+    "t": "comparto",
+    "inicio": 36.22,
+    "fin": 37.12
+   },
+   {
+    "t": "lo",
+    "inicio": 37.12,
+    "fin": 37.24
+   },
+   {
+    "t": "que",
+    "inicio": 37.24,
+    "fin": 37.4
+   },
+   {
+    "t": "vivo,",
+    "inicio": 37.4,
+    "fin": 37.64
+   }
+  ]
+ },
+ {
+  "inicio": 38.02,
+  "fin": 39.04,
+  "palabras": [
+   {
+    "t": "lo",
+    "inicio": 38.02,
+    "fin": 38.08
+   },
+   {
+    "t": "que",
+    "inicio": 38.08,
+    "fin": 38.18
+   },
+   {
+    "t": "funciona",
+    "inicio": 38.18,
+    "fin": 38.56
+   },
+   {
+    "t": "en",
+    "inicio": 38.56,
+    "fin": 38.8
+   },
+   {
+    "t": "obra,",
+    "inicio": 38.8,
+    "fin": 39.04
+   }
+  ]
+ },
+ {
+  "inicio": 39.16,
+  "fin": 40.78,
+  "palabras": [
+   {
+    "t": "lo",
+    "inicio": 39.16,
+    "fin": 39.24
+   },
+   {
+    "t": "que",
+    "inicio": 39.24,
+    "fin": 39.4
+   },
+   {
+    "t": "no",
+    "inicio": 39.4,
+    "fin": 39.68
+   },
+   {
+    "t": "y",
+    "inicio": 39.68,
+    "fin": 40.32
+   },
+   {
+    "t": "cómo",
+    "inicio": 40.32,
+    "fin": 40.56
+   },
+   {
+    "t": "estoy",
+    "inicio": 40.56,
+    "fin": 40.78
+   }
+  ]
+ },
+ {
+  "inicio": 40.78,
+  "fin": 42.4,
+  "palabras": [
+   {
+    "t": "usando",
+    "inicio": 40.78,
+    "fin": 41.14
+   },
+   {
+    "t": "la",
+    "inicio": 41.14,
+    "fin": 41.38
+   },
+   {
+    "t": "IA",
+    "inicio": 41.38,
+    "fin": 41.78
+   },
+   {
+    "t": "en",
+    "inicio": 41.78,
+    "fin": 42.0
+   },
+   {
+    "t": "proyectos",
+    "inicio": 42.0,
+    "fin": 42.4
+   }
+  ]
+ },
+ {
+  "inicio": 42.4,
+  "fin": 43.88,
+  "palabras": [
+   {
+    "t": "reales",
+    "inicio": 42.4,
+    "fin": 42.9
+   },
+   {
+    "t": "sin",
+    "inicio": 42.9,
+    "fin": 43.04
+   },
+   {
+    "t": "fórmulas",
+    "inicio": 43.04,
+    "fin": 43.34
+   },
+   {
+    "t": "mágicas.",
+    "inicio": 43.34,
+    "fin": 43.88
+   }
+  ]
+ },
+ {
+  "inicio": 44.88,
+  "fin": 46.04,
+  "palabras": [
+   {
+    "t": "¿Cuál",
+    "inicio": 44.88,
+    "fin": 45.24
+   },
+   {
+    "t": "es",
+    "inicio": 45.24,
+    "fin": 45.34
+   },
+   {
+    "t": "la",
+    "inicio": 45.34,
+    "fin": 45.4
+   },
+   {
+    "t": "decisión",
+    "inicio": 45.4,
+    "fin": 45.82
+   },
+   {
+    "t": "más",
+    "inicio": 45.82,
+    "fin": 46.04
+   }
+  ]
+ },
+ {
+  "inicio": 46.04,
+  "fin": 47.18,
+  "palabras": [
+   {
+    "t": "difícil",
+    "inicio": 46.04,
+    "fin": 46.48
+   },
+   {
+    "t": "que",
+    "inicio": 46.48,
+    "fin": 46.78
+   },
+   {
+    "t": "te",
+    "inicio": 46.78,
+    "fin": 46.92
+   },
+   {
+    "t": "toca",
+    "inicio": 46.92,
+    "fin": 47.18
+   }
+  ]
+ },
+ {
+  "inicio": 47.18,
+  "fin": 48.4,
+  "palabras": [
+   {
+    "t": "tomar",
+    "inicio": 47.18,
+    "fin": 47.46
+   },
+   {
+    "t": "en",
+    "inicio": 47.46,
+    "fin": 47.62
+   },
+   {
+    "t": "tus",
+    "inicio": 47.62,
+    "fin": 47.74
+   },
+   {
+    "t": "proyectos?",
+    "inicio": 47.74,
+    "fin": 48.4
+   }
+  ]
+ },
+ {
+  "inicio": 48.62,
+  "fin": 49.38,
+  "palabras": [
+   {
+    "t": "Te",
+    "inicio": 48.62,
+    "fin": 48.74
+   },
+   {
+    "t": "leo",
+    "inicio": 48.74,
+    "fin": 48.9
+   },
+   {
+    "t": "en",
+    "inicio": 48.9,
+    "fin": 48.96
+   },
+   {
+    "t": "los",
+    "inicio": 48.96,
+    "fin": 49.02
+   },
+   {
+    "t": "comentarios.",
+    "inicio": 49.02,
+    "fin": 49.38
+   }
+  ]
+ }
+]
