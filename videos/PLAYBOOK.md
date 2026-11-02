@@ -75,6 +75,7 @@ No hay conector de CapCut ni Descript: Carlos edita, Claude prepara:
 - `PresentacionPLL` — presentación de Project Leader Lab 1:1 (25 s): marco dorado + etiqueta → pregunta → 3 temas numerados → mensaje de apoyo → nombre + slogan (énfasis serif itálico) + CTA. Textos de la base de marca `videos/marca-pll.md` (slogan aprobado).
 - `ReelCarlos` — reel vertical 9:16 (1080×1920, 27 s) de Carlos: gancho + giro → 2 puntos numerados → perspectiva → pregunta + firma. Texto en zona segura (15 % arriba/abajo libre), `textWrap: balance`, barra de progreso. Guion con reglas de `video-script-hyc` y sin cifras.
 - `PostMarcaPersonal` / `PostProjectLeader` — frase con firma 1:1 (6 s).
+- `CostosEAC01` — "Ingeniería de costos en 60 segundos" #01, 4:5 (1080×1350, 30 s): barras, burbujas, área e histograma en SVG + música generada (`videos/producciones/2026-11-costos-01/`).
 
 ### 3-D. Video animado con datos (HYC)
 
