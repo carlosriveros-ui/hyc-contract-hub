@@ -1,4 +1,4 @@
-"""Música de fondo original (sin copyright) para "Ingeniería de costos en 60 s" #01 — 30 s, 120 bpm.
+"""Música de fondo original (sin copyright) para "Ingeniería de costos en 30 s" #01 — 30 s, 120 bpm.
 
 Tono reflexivo/corporativo: pad (Am7 – Fmaj7 – C – G), bajo suave, bombo desde el gancho,
 arpegio desde el CPI, hats y un "whoosh" antes de cada cambio de escena (alineados con la composición

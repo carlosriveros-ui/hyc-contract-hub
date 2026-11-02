@@ -1,4 +1,4 @@
-# Producción 2026-11 — "Ingeniería de costos en 60 segundos" #01: Tu presupuesto no es tu pronóstico
+# Producción 2026-11 — "Ingeniería de costos en 30 segundos" #01: Tu presupuesto no es tu pronóstico
 
 Video de **Carlos Riveros** (marca personal → Remotion), LinkedIn feed **4:5 (1080×1350)**, **30 s**, en español, con música.
 Composición: `src/remotion/costos/CostosEAC01.tsx` (`CostosEAC01`).

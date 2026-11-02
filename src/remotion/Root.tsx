@@ -26,7 +26,7 @@ export const RemotionRoot = () => (
       durationInFrames={Math.round((CARLOS_FIN_VIDEO + CARLOS_CIERRE) * 30)} />
     <Composition id="HabladoPLL" component={HabladoPLL} fps={30} width={1080} height={1920}
       durationInFrames={Math.round((PLL_FIN_VIDEO + PLL_CIERRE) * 30)} />
-    {/* Ingeniería de costos en 60 s · #01 (4:5). Render con --public-dir videos/producciones/2026-11-costos-01/fuentes */}
+    {/* Ingeniería de costos en 30 s · #01 (4:5). Render con --public-dir videos/producciones/2026-11-costos-01/fuentes */}
     <Composition {...COSTOS_EAC_01} component={CostosEAC01} />
   </>
 );

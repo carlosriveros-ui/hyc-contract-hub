@@ -1,4 +1,4 @@
-// "Ingeniería de costos en 60 segundos" #01 — Tu presupuesto no es tu pronóstico (EAC).
+// "Ingeniería de costos en 30 segundos" #01 — Tu presupuesto no es tu pronóstico (EAC).
 // Carlos Riveros · LinkedIn feed 4:5 (1080×1350) · 30 s → Remotion (marca personal). Ver REGLA en CONTEXT.md.
 // Identidad Carlos: editorial, alineado a la izquierda, línea dorada. Paleta solo de videos/marcas.json.
 // Cifras del caso (aprobadas por Carlos, 2-nov-2026): BAC 100M · 60 % completado · AC 70M.
@@ -405,7 +405,7 @@ function Cabecera() {
   return (
     <div style={{ position: "absolute", top: 84, left: MARGEN, right: MARGEN }}>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, letterSpacing: 3, fontWeight: 600 }}>
-        <span style={{ color: P.acento }}>INGENIERÍA DE COSTOS EN 60 SEGUNDOS</span>
+        <span style={{ color: P.acento }}>INGENIERÍA DE COSTOS EN 30 SEGUNDOS</span>
         <span style={{ opacity: 0.6 }}>#01</span>
       </div>
       <div style={{ marginTop: 18, height: 4, background: RET[1] }}>
