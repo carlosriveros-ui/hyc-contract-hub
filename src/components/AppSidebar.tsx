@@ -5,7 +5,7 @@ import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, FileText, ClipboardCheck, Package, HardHat,
-  Wallet, Clock, Coins, FileBarChart, Settings, LogOut, Building2, Sparkles, Upload, Clapperboard,
+  Wallet, Clock, Coins, FileBarChart, Settings, LogOut, Building2, Sparkles, Upload, Clapperboard, CalendarDays,
 } from "lucide-react";
 import type { Role } from "@/types";
 
@@ -23,6 +23,7 @@ const navByRole: Record<Role, NavItem[]> = {
     { to: "/caja-menor", label: "Caja Menor", icon: Coins },
     { to: "/importar", label: "Importar Datos", icon: Upload },
     { to: "/reportes", label: "Reportes", icon: FileBarChart },
+    { to: "/agenda", label: "Agenda (reservas)", icon: CalendarDays },
     { to: "/marca-personal", label: "Marca Personal", icon: Sparkles },
     { to: "/videos", label: "Videos (Marca Personal)", icon: Clapperboard },
   ],

@@ -20,6 +20,9 @@ import ComingSoon from "./pages/ComingSoon";
 import MarcaPersonalHub from "./pages/admin/MarcaPersonal";
 import DataImport from "./pages/admin/DataImport";
 const Videos = lazy(() => import("./pages/admin/Videos"));
+const Agenda = lazy(() => import("./pages/admin/Agenda"));
+const BookingPage = lazy(() => import("./pages/agendar/BookingPage"));
+const ManageBooking = lazy(() => import("./pages/agendar/ManageBooking"));
 
 const queryClient = new QueryClient();
 
@@ -32,6 +35,11 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
+            {/* Agenda pública: sin inicio de sesión */}
+            <Route path="/agendar" element={<Suspense fallback={null}><BookingPage /></Suspense>} />
+            <Route path="/agendar/reserva/:token" element={<Suspense fallback={null}><ManageBooking /></Suspense>} />
+            <Route path="/agendar/:slug" element={<Suspense fallback={null}><BookingPage /></Suspense>} />
+            <Route path="/agenda" element={<RequireAuth roles={["admin"]}><Suspense fallback={null}><Agenda /></Suspense></RequireAuth>} />
             <Route path="/contratos" element={<RequireAuth roles={["admin", "coordinador"]}><ContractsList /></RequireAuth>} />
             <Route path="/contratos/:id" element={<RequireAuth roles={["admin", "coordinador"]}><ContractDetail /></RequireAuth>} />
             <Route path="/actividades" element={<RequireAuth roles={["admin", "coordinador", "cliente"]}><ActivitiesCoordinator /></RequireAuth>} />
