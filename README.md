@@ -57,6 +57,18 @@ VITE_SUPABASE_URL=https://xlfnsmaoblhxkxpyhqrs.supabase.co
 VITE_SUPABASE_ANON_KEY=...           # clave pública (frontend)
 SUPABASE_SERVICE_KEY=...             # service_role (solo serverless)
 ANTHROPIC_API_KEY=...                # Claude AI (solo serverless)
+
+# Agenda de reuniones (/agendar y /agenda) — guía completa en docs/AGENDA.md
+AGENDA_ADMIN_KEY=...                 # clave del panel /agenda
+AGENDA_PUBLIC_URL=https://hyc-contract-hub.vercel.app
+CRON_SECRET=...                      # protege los recordatorios
+GOOGLE_CLIENT_ID=...                 # Google Calendar (OAuth)
+GOOGLE_CLIENT_SECRET=...
+RESEND_API_KEY=...                   # correos
+AGENDA_EMAIL_FROM="Carlos Riveros <agenda@tudominio.com>"
+WHATSAPP_TOKEN=...                   # opcional: WhatsApp Cloud API
+WHATSAPP_PHONE_ID=...
+AGENDA_ICS_URLS=...                  # opcional: calendarios ICS (Outlook/iCloud)
 ```
 
 > **Nunca** exponer `SUPABASE_SERVICE_KEY` ni `ANTHROPIC_API_KEY` en el frontend.
