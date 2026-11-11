@@ -292,6 +292,16 @@ Parseo de números: remueve `$`, `.` (miles), `,` → `.` decimal
 
 ---
 
+## Agenda de reuniones (tipo Calendly)
+
+- Pública: `/agendar` · Panel: `/agenda` · API: `api/agenda.ts` (`?action=`) · Cron: `api/cron/agenda-reminders.ts`.
+- Tablas `agenda_*` en `supabase/agenda.sql` (RLS sin políticas: solo service key).
+- Revisa ocupados en Google Calendar (OAuth) + calendarios ICS (`AGENDA_ICS_URLS`) + reservas; crea evento con Meet.
+- Avisos por Resend (correo) y WhatsApp Cloud API (plantillas). Colores desde `videos/marcas.json`.
+- Configuración completa y variables de entorno: `docs/AGENDA.md`.
+
+---
+
 ## REGLA: Videos — Revideo para HYC, Remotion para marca personal, Manim para didácticos de Project Leader Lab, MoviePy para editar grabaciones
 
 | Marca | Herramienta | Dónde |
